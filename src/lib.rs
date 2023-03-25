@@ -18,7 +18,7 @@ fn pack_color(r: u8, g: u8, b: u8, a: u8) -> (u8, u8) {
     let r = (r >> 3) as u16;
     let g = (g >> 3) as u16;
     let b = (b >> 3) as u16;
-    let a = (a >> 7)  as u16; 
+    let a = (a > 127) as u16;
     
     let s = (r << 11) | (g << 6) | ( b << 1) | a;
 
@@ -29,10 +29,12 @@ pub struct Image {
     data: Vec<u8>,
     color_type: ColorType,
     bit_depth: BitDepth,
+    width: u32,
+    height: u32,
 }
 
 impl Image {
-    pub fn read_png<R: Read>(r: R, flip_x: bool, flip_y: bool) -> Image {
+    pub fn read_png<R: Read>(r: R) -> Image {
         let decoder = png::Decoder::new(r);
         let mut reader = decoder.read_info().unwrap();
         // Allocate the output buffer.
@@ -42,45 +44,59 @@ impl Image {
 
         // Grab the bytes of the image.
         let input_bytes = &buf[..info.buffer_size()];
-        let mut input_bytes_flipped = vec![0; input_bytes.len()];
+
+        Image {
+            data: input_bytes.to_vec(),
+            color_type: info.color_type,
+            bit_depth: info.bit_depth,
+            width: info.width,
+            height: info.height,
+        }
+    }
+
+    pub fn flip(&self, flip_x: bool, flip_y: bool) -> Image {
+        let mut flipped_bytes = vec![0; self.data.len()];
 
         match (flip_x, flip_y) {
             (true, true) => {
-                for y in 0..info.height {
-                    for x in 0..info.width {
-                        let old_index = (y * info.width + x) as usize * info.color_type.samples();
-                        let new_index = ((info.height - y - 1) * info.width + (info.width - x - 1)) as usize * info.color_type.samples();
-                        input_bytes_flipped[new_index..new_index + info.color_type.samples()].copy_from_slice(&input_bytes[old_index..old_index + info.color_type.samples()]);
+                for y in 0..self.height {
+                    for x in 0..self.width {
+                        let old_index = (y * self.width + x) as usize * self.color_type.samples();
+                        let new_index = ((self.height - y - 1) * self.width + (self.width - x - 1)) as usize * self.color_type.samples();
+                        flipped_bytes[new_index..new_index + self.color_type.samples()].copy_from_slice(&self.data[old_index..old_index + self.color_type.samples()]);
                     }
                 }
             },
             (true, false) => {
-                for y in 0..info.height {
-                    for x in 0..info.width {
-                        let old_index = (y * info.width + x) as usize * info.color_type.samples();
-                        let new_index = (y * info.width + (info.width - x - 1)) as usize * info.color_type.samples();
-                        input_bytes_flipped[new_index..new_index + info.color_type.samples()].copy_from_slice(&input_bytes[old_index..old_index + info.color_type.samples()]);
+                for y in 0..self.height {
+                    for x in 0..self.width {
+                        let old_index = (y * self.width + x) as usize * self.color_type.samples();
+                        let new_index = (y * self.width + (self.width - x - 1)) as usize * self.color_type.samples();
+                        flipped_bytes[new_index..new_index + self.color_type.samples()].copy_from_slice(&self.data[old_index..old_index + self.color_type.samples()]);
                     }
                 }
             },
             (false, true) => {
-                for y in 0..info.height {
-                    for x in 0..info.width {
-                        let old_index = (y * info.width + x) as usize * info.color_type.samples();
-                        let new_index = ((info.height - y - 1) * info.width + x) as usize * info.color_type.samples();
-                        input_bytes_flipped[new_index..new_index + info.color_type.samples()].copy_from_slice(&input_bytes[old_index..old_index + info.color_type.samples()]);
+                for y in 0..self.height {
+                    for x in 0..self.width {
+                        let old_index = (y * self.width + x) as usize * self.color_type.samples();
+                        let new_index = ((self.height - y - 1) * self.width + x) as usize * self.color_type.samples();
+                        flipped_bytes[new_index..new_index + self.color_type.samples()].copy_from_slice(&self.data[old_index..old_index + self.color_type.samples()]);
                     }
                 }
             },
             (false, false) => {
-                input_bytes_flipped.copy_from_slice(input_bytes);
-            },
+                flipped_bytes.copy_from_slice(&self.data);
+            }
         }
 
+        // return self with the new flipped bytes
         Image {
-            data: input_bytes_flipped,
-            color_type: info.color_type,
-            bit_depth: info.bit_depth,
+            data: flipped_bytes,
+            color_type: self.color_type,
+            bit_depth: self.bit_depth,
+            width: self.width,
+            height: self.height,
         }
     }
 
@@ -211,12 +227,12 @@ impl Image {
             (ColorType::GrayscaleAlpha, BitDepth::Eight) => self.data
                 .chunks_exact(4)
                 .map(|chunk| {
-                    let intensity = chunk[0] << 1;
-                    let alpha = chunk[1] >> 7;
+                    let intensity = (chunk[0] >> 5) << 1;
+                    let alpha = (chunk[1] > 127) as u8;
                     let high = intensity | alpha;
 
-                    let intensity = chunk[2] << 1;
-                    let alpha = chunk[3] >> 7;
+                    let intensity = (chunk[2] >> 5) << 1;
+                    let alpha = (chunk[3] > 127) as u8;
                     let low = intensity | alpha;
 
                     high << 4 | (low & 0xF)

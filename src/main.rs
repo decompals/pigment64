@@ -52,9 +52,11 @@ fn main() {
     let bin = if let Format::Palette = args.format {
         pigment::get_palette_rgba16(&mut input_reader)
     } else {
-        let image = pigment::Image::read_png(&mut input_reader, args.flip_x, args.flip_y);
+        let mut image = pigment::Image::read_png(&mut input_reader);
         
-        // TODO: flip_x and flip_y
+        if args.flip_x || args.flip_y {
+            image = image.flip(args.flip_x, args.flip_y);
+        }
         
         match args.format {
             Format::Ci4 => image.as_ci4(),
@@ -76,7 +78,7 @@ fn main() {
         path
     }));
 
-    BufWriter::new(File::create(&output_path).expect("could not open output file"))
+    BufWriter::new(File::create(output_path).expect("could not open output file"))
         .write_all(&bin)
         .expect("could not write to output file");
 }
