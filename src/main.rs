@@ -2,6 +2,7 @@ use clap::{Parser, ValueEnum};
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::{BufReader, BufWriter};
+use std::mem;
 use std::path::PathBuf;
 
 /// PNG to N64 image converter
@@ -60,33 +61,36 @@ enum TypeWideArray {
 
 #[macro_export]
 macro_rules! write_buf_as_raw_array {
-    ($dst:expr, $bin:expr, $width:expr, $callback:expr) => {
+    ($dst:expr, $bin:expr, $type_width:ident) => {
+        let width = mem::size_of::<$type_width>();
+
         for row in $bin.chunks(16) {
             let mut line_list = Vec::new();
-            for bytes in row.chunks($width) {
-                let value = $callback(bytes.try_into().unwrap());
-                line_list.push(format!("0x{value:00$X}", 2*$width));
+            for bytes in row.chunks(width) {
+                let value = $type_width::from_be_bytes(bytes.try_into().unwrap());
+
+                line_list.push(format!("0x{value:00$X}", 2 * width));
             }
             let line = line_list.join(", ");
             write!($dst, "    {line},\n").expect("could not write to output file");
         }
-    }
+    };
 }
 
 fn write_buf_as_u8(output_file: &mut File, bin: &Vec<u8>) {
-    write_buf_as_raw_array!(output_file, bin, 1, u8::from_be_bytes);
+    write_buf_as_raw_array!(output_file, bin, u8);
 }
 
 fn write_buf_as_u16(output_file: &mut File, bin: &Vec<u8>) {
-    write_buf_as_raw_array!(output_file, bin, 2, u16::from_be_bytes);
+    write_buf_as_raw_array!(output_file, bin, u16);
 }
 
 fn write_buf_as_u32(output_file: &mut File, bin: &Vec<u8>) {
-    write_buf_as_raw_array!(output_file, bin, 4, u32::from_be_bytes);
+    write_buf_as_raw_array!(output_file, bin, u32);
 }
 
 fn write_buf_as_u64(output_file: &mut File, bin: &Vec<u8>) {
-    write_buf_as_raw_array!(output_file, bin, 8, u64::from_be_bytes);
+    write_buf_as_raw_array!(output_file, bin, u64);
 }
 
 fn main() {
