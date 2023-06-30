@@ -1,7 +1,7 @@
 use clap::{Parser, ValueEnum};
 use std::fs::File;
-use std::io::{BufReader, BufWriter};
 use std::io::prelude::*;
+use std::io::{BufReader, BufWriter};
 use std::path::PathBuf;
 
 /// PNG to N64 image converter
@@ -130,7 +130,9 @@ fn write_buf_as_u64(output_file: &mut File, bin: &Vec<u8>) {
                 write!(output_file, " ").expect("could not write to output file");
             }
 
-            let value = u64::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7]]);
+            let value = u64::from_be_bytes([
+                bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+            ]);
 
             write!(output_file, "0x{value:016X},").expect("could not write to output file");
 
@@ -179,7 +181,7 @@ fn main() {
     let mut output_file = File::create(output_path).expect("could not create output file");
 
     if args.c_array {
-        let mut type_wide : TypeWideArray;
+        let mut type_wide: TypeWideArray;
 
         // Compute the default value first
         match args.format {
@@ -209,5 +211,4 @@ fn main() {
             .write_all(&bin)
             .expect("could not write to output file");
     }
-
 }
