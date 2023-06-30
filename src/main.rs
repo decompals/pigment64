@@ -27,13 +27,13 @@ struct Args {
     #[arg(long)]
     flip_y: bool,
 
-    /// Output a raw C array which can be `#include` in a file. The default output type width matches the FORMAT provided, but it can be fine-tunned with --type-width
+    /// Output a raw C array which can be `#include`d in a file. The default output type width matches the FORMAT provided, but it can be fine-tuned with --type-width
     #[arg(short, long)]
     c_array: bool,
 
     /// Overrides the natural fit of each format when outputting a C array
     #[arg(short, long, value_enum)]
-    type_wide: Option<TypeWideArray>,
+    type_width: Option<TypeWideArray>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
@@ -179,26 +179,26 @@ fn main() {
     let mut output_file = File::create(output_path).expect("could not create output file");
 
     if args.c_array {
-        let mut type_wide: TypeWideArray;
+        let mut type_width: TypeWideArray;
 
         // Compute the default value first
         match args.format {
-            Format::Ci4 => type_wide = TypeWideArray::U8,
-            Format::Ci8 => type_wide = TypeWideArray::U8,
-            Format::I4 => type_wide = TypeWideArray::U8,
-            Format::I8 => type_wide = TypeWideArray::U8,
-            Format::Ia4 => type_wide = TypeWideArray::U8,
-            Format::Ia8 => type_wide = TypeWideArray::U8,
-            Format::Ia16 => type_wide = TypeWideArray::U16,
-            Format::Rgba16 => type_wide = TypeWideArray::U16,
-            Format::Rgba32 => type_wide = TypeWideArray::U32,
-            Format::Palette => type_wide = TypeWideArray::U16,
+            Format::Ci4 => type_width = TypeWideArray::U8,
+            Format::Ci8 => type_width = TypeWideArray::U8,
+            Format::I4 => type_width = TypeWideArray::U8,
+            Format::I8 => type_width = TypeWideArray::U8,
+            Format::Ia4 => type_width = TypeWideArray::U8,
+            Format::Ia8 => type_width = TypeWideArray::U8,
+            Format::Ia16 => type_width = TypeWideArray::U16,
+            Format::Rgba16 => type_width = TypeWideArray::U16,
+            Format::Rgba32 => type_width = TypeWideArray::U32,
+            Format::Palette => type_width = TypeWideArray::U16,
         }
 
         // Override if the user passed the appropiate flag
-        type_wide = args.type_wide.unwrap_or(type_wide);
+        type_width = args.type_width.unwrap_or(type_width);
 
-        match type_wide {
+        match type_width {
             TypeWideArray::U8 => write_buf_as_u8(&mut output_file, &bin),
             TypeWideArray::U16 => write_buf_as_u16(&mut output_file, &bin),
             TypeWideArray::U32 => write_buf_as_u32(&mut output_file, &bin),
