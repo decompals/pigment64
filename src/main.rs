@@ -27,7 +27,7 @@ struct Args {
     #[arg(long)]
     flip_y: bool,
 
-    /// Output a raw C array which can be `#include`d in a file. The default output type width matches the FORMAT provided, but it can be fine-tuned with --type-width
+    /// Output a raw C array which can be `#include`d in a file. The default output type width matches the FORMAT provided, but it can be overridden with --type-width
     #[arg(short, long)]
     c_array: bool,
 
