@@ -85,18 +85,21 @@ fn main() {
     let mut output_file = File::create(output_path).expect("could not create output file");
 
     if args.c_array {
-        let mut bytes_writen = 0;
+        for row in bin.chunks(16) {
+            write!(output_file, "    ").expect("c");
 
-        for byte in bin {
-            write!(output_file, "0x{byte:02X}, ").expect("oy noy, stuff failed");
+            let mut printed_first = false;
 
-            bytes_writen += 1;
+            for byte in row {
+                if printed_first {
+                    write!(output_file, " ").expect("asdf");
+                }
 
-            if bytes_writen >= 8 {
-                bytes_writen = 0;
+                write!(output_file, "0x{byte:02X},").expect("oy noy, stuff failed");
 
-                write!(output_file, "\n").expect("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+                printed_first = true;
             }
+            write!(output_file, "\n").expect("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         }
     } else {
         BufWriter::new(output_file)
