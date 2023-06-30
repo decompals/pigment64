@@ -26,6 +26,10 @@ struct Args {
     /// Flip the image on the y axis
     #[arg(long)]
     flip_y: bool,
+
+    /// TODO: help message. yada yada yada yada
+    #[arg(short, long)]
+    c_array: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
@@ -53,11 +57,11 @@ fn main() {
         pigment::get_palette_rgba16(&mut input_reader)
     } else {
         let mut image = pigment::Image::read_png(&mut input_reader);
-        
+
         if args.flip_x || args.flip_y {
             image = image.flip(args.flip_x, args.flip_y);
         }
-        
+
         match args.format {
             Format::Ci4 => image.as_ci4(),
             Format::Ci8 => image.as_ci8(),
@@ -78,7 +82,26 @@ fn main() {
         path
     }));
 
-    BufWriter::new(File::create(output_path).expect("could not open output file"))
-        .write_all(&bin)
-        .expect("could not write to output file");
+    let mut output_file = File::create(output_path).expect("could not create output file");
+
+    if args.c_array {
+        let mut bytes_writen = 0;
+
+        for byte in bin {
+            write!(output_file, "0x{byte:02X}, ").expect("oy noy, stuff failed");
+
+            bytes_writen += 1;
+
+            if bytes_writen >= 8 {
+                bytes_writen = 0;
+
+                write!(output_file, "\n").expect("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+            }
+        }
+    } else {
+        BufWriter::new(output_file)
+            .write_all(&bin)
+            .expect("could not write to output file");
+    }
+
 }
