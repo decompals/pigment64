@@ -27,9 +27,13 @@ struct Args {
     #[arg(long)]
     flip_y: bool,
 
-    /// TODO: help message. yada yada yada yada
+    /// Output a raw C array which can be `#include` in a file. The default output type width matches the FORMAT provided, but it can be fine-tunned with --type-width
     #[arg(short, long)]
     c_array: bool,
+
+    /// Overrides the natural fit of each format when outputting a C array
+    #[arg(short, long, value_enum)]
+    type_wide: Option<TypeWideArray>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
@@ -44,6 +48,96 @@ enum Format {
     Rgba16,
     Rgba32,
     Palette,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
+enum TypeWideArray {
+    U8,
+    U16,
+    U32,
+    U64,
+}
+
+fn write_buf_as_u8(output_file: &mut File, bin: &Vec<u8>) {
+    for row in bin.chunks(16) {
+        write!(output_file, "    ").expect("could not write to output file");
+
+        let mut printed_first = false;
+
+        for byte in row {
+            if printed_first {
+                write!(output_file, " ").expect("could not write to output file");
+            }
+
+            write!(output_file, "0x{byte:02X},").expect("could not write to output file");
+
+            printed_first = true;
+        }
+        write!(output_file, "\n").expect("could not write to output file");
+    }
+}
+
+fn write_buf_as_u16(output_file: &mut File, bin: &Vec<u8>) {
+    for row in bin.chunks(16) {
+        write!(output_file, "    ").expect("could not write to output file");
+
+        let mut printed_first = false;
+
+        for bytes in row.chunks(2) {
+            if printed_first {
+                write!(output_file, " ").expect("could not write to output file");
+            }
+
+            let value = u16::from_be_bytes([bytes[0], bytes[1]]);
+
+            write!(output_file, "0x{value:04X},").expect("could not write to output file");
+
+            printed_first = true;
+        }
+        write!(output_file, "\n").expect("could not write to output file");
+    }
+}
+
+fn write_buf_as_u32(output_file: &mut File, bin: &Vec<u8>) {
+    for row in bin.chunks(16) {
+        write!(output_file, "    ").expect("could not write to output file");
+
+        let mut printed_first = false;
+
+        for bytes in row.chunks(4) {
+            if printed_first {
+                write!(output_file, " ").expect("could not write to output file");
+            }
+
+            let value = u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+
+            write!(output_file, "0x{value:08X},").expect("could not write to output file");
+
+            printed_first = true;
+        }
+        write!(output_file, "\n").expect("could not write to output file");
+    }
+}
+
+fn write_buf_as_u64(output_file: &mut File, bin: &Vec<u8>) {
+    for row in bin.chunks(16) {
+        write!(output_file, "    ").expect("could not write to output file");
+
+        let mut printed_first = false;
+
+        for bytes in row.chunks(8) {
+            if printed_first {
+                write!(output_file, " ").expect("could not write to output file");
+            }
+
+            let value = u64::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7]]);
+
+            write!(output_file, "0x{value:016X},").expect("could not write to output file");
+
+            printed_first = true;
+        }
+        write!(output_file, "\n").expect("could not write to output file");
+    }
 }
 
 fn main() {
@@ -85,21 +179,30 @@ fn main() {
     let mut output_file = File::create(output_path).expect("could not create output file");
 
     if args.c_array {
-        for row in bin.chunks(16) {
-            write!(output_file, "    ").expect("c");
+        let mut type_wide : TypeWideArray;
 
-            let mut printed_first = false;
+        // Compute the default value first
+        match args.format {
+            Format::Ci4 => type_wide = TypeWideArray::U8,
+            Format::Ci8 => type_wide = TypeWideArray::U8,
+            Format::I4 => type_wide = TypeWideArray::U8,
+            Format::I8 => type_wide = TypeWideArray::U8,
+            Format::Ia4 => type_wide = TypeWideArray::U8,
+            Format::Ia8 => type_wide = TypeWideArray::U8,
+            Format::Ia16 => type_wide = TypeWideArray::U16,
+            Format::Rgba16 => type_wide = TypeWideArray::U16,
+            Format::Rgba32 => type_wide = TypeWideArray::U32,
+            Format::Palette => type_wide = TypeWideArray::U16,
+        }
 
-            for byte in row {
-                if printed_first {
-                    write!(output_file, " ").expect("asdf");
-                }
+        // Override if the user passed the appropiate flag
+        type_wide = args.type_wide.unwrap_or(type_wide);
 
-                write!(output_file, "0x{byte:02X},").expect("oy noy, stuff failed");
-
-                printed_first = true;
-            }
-            write!(output_file, "\n").expect("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        match type_wide {
+            TypeWideArray::U8 => write_buf_as_u8(&mut output_file, &bin),
+            TypeWideArray::U16 => write_buf_as_u16(&mut output_file, &bin),
+            TypeWideArray::U32 => write_buf_as_u32(&mut output_file, &bin),
+            TypeWideArray::U64 => write_buf_as_u64(&mut output_file, &bin),
         }
     } else {
         BufWriter::new(output_file)
