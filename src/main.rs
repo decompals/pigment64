@@ -88,7 +88,7 @@ fn write_buf_as_u16(output_file: &mut File, bin: &Vec<u8>) {
                 write!(output_file, " ").expect("could not write to output file");
             }
 
-            let value = u16::from_be_bytes([bytes[0], bytes[1]]);
+            let value = u16::from_be_bytes(bytes.try_into().unwrap());
 
             write!(output_file, "0x{value:04X},").expect("could not write to output file");
 
@@ -109,7 +109,7 @@ fn write_buf_as_u32(output_file: &mut File, bin: &Vec<u8>) {
                 write!(output_file, " ").expect("could not write to output file");
             }
 
-            let value = u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+            let value = u32::from_be_bytes(bytes.try_into().unwrap());
 
             write!(output_file, "0x{value:08X},").expect("could not write to output file");
 
@@ -130,9 +130,7 @@ fn write_buf_as_u64(output_file: &mut File, bin: &Vec<u8>) {
                 write!(output_file, " ").expect("could not write to output file");
             }
 
-            let value = u64::from_be_bytes([
-                bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
-            ]);
+            let value = u64::from_be_bytes(bytes.try_into().unwrap());
 
             write!(output_file, "0x{value:016X},").expect("could not write to output file");
 
