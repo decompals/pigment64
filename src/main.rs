@@ -58,64 +58,35 @@ enum TypeWideArray {
     U64,
 }
 
-fn write_buf_as_u8(output_file: &mut File, bin: &Vec<u8>) {
-    for row in bin.chunks(16) {
-        let mut line_list = Vec::new();
-
-        for bytes in row.chunks(1) {
-            let value = u8::from_be_bytes(bytes.try_into().unwrap());
-
-            line_list.push(format!("0x{value:02X}"));
+#[macro_export]
+macro_rules! write_buf_as_raw_array {
+    ($dst:expr, $bin:expr, $width:expr, $callback:expr) => {
+        for row in $bin.chunks(16) {
+            let mut line_list = Vec::new();
+            for bytes in row.chunks($width) {
+                let value = $callback(bytes.try_into().unwrap());
+                line_list.push(format!("0x{value:00$X}", 2*$width));
+            }
+            let line = line_list.join(", ");
+            write!($dst, "    {line},\n").expect("could not write to output file");
         }
-
-        let line = line_list.join(", ");
-        write!(output_file, "    {line},\n").expect("could not write to output file");
     }
+}
+
+fn write_buf_as_u8(output_file: &mut File, bin: &Vec<u8>) {
+    write_buf_as_raw_array!(output_file, bin, 1, u8::from_be_bytes);
 }
 
 fn write_buf_as_u16(output_file: &mut File, bin: &Vec<u8>) {
-    for row in bin.chunks(16) {
-        let mut line_list = Vec::new();
-
-        for bytes in row.chunks(2) {
-            let value = u16::from_be_bytes(bytes.try_into().unwrap());
-
-            line_list.push(format!("0x{value:04X}"));
-        }
-
-        let line = line_list.join(", ");
-        write!(output_file, "    {line},\n").expect("could not write to output file");
-    }
+    write_buf_as_raw_array!(output_file, bin, 2, u16::from_be_bytes);
 }
 
 fn write_buf_as_u32(output_file: &mut File, bin: &Vec<u8>) {
-    for row in bin.chunks(16) {
-        let mut line_list = Vec::new();
-
-        for bytes in row.chunks(4) {
-            let value = u32::from_be_bytes(bytes.try_into().unwrap());
-
-            line_list.push(format!("0x{value:08X}"));
-        }
-
-        let line = line_list.join(", ");
-        write!(output_file, "    {line},\n").expect("could not write to output file");
-    }
+    write_buf_as_raw_array!(output_file, bin, 4, u32::from_be_bytes);
 }
 
 fn write_buf_as_u64(output_file: &mut File, bin: &Vec<u8>) {
-    for row in bin.chunks(16) {
-        let mut line_list = Vec::new();
-
-        for bytes in row.chunks(8) {
-            let value = u64::from_be_bytes(bytes.try_into().unwrap());
-
-            line_list.push(format!("0x{value:016X}"));
-        }
-
-        let line = line_list.join(", ");
-        write!(output_file, "    {line},\n").expect("could not write to output file");
-    }
+    write_buf_as_raw_array!(output_file, bin, 8, u64::from_be_bytes);
 }
 
 fn main() {
