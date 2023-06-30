@@ -59,6 +59,23 @@ enum TypeWideArray {
     U64,
 }
 
+impl Format {
+    fn get_width(&self) -> TypeWideArray {
+        match self {
+            Format::Ci4 => TypeWideArray::U8,
+            Format::Ci8 => TypeWideArray::U8,
+            Format::I4 => TypeWideArray::U8,
+            Format::I8 => TypeWideArray::U8,
+            Format::Ia4 => TypeWideArray::U8,
+            Format::Ia8 => TypeWideArray::U8,
+            Format::Ia16 => TypeWideArray::U16,
+            Format::Rgba16 => TypeWideArray::U16,
+            Format::Rgba32 => TypeWideArray::U32,
+            Format::Palette => TypeWideArray::U16,
+        }
+    }
+}
+
 #[macro_export]
 macro_rules! write_buf_as_raw_array {
     ($dst:expr, $bin:expr, $type_width:ident) => {
@@ -132,21 +149,7 @@ fn main() {
     let mut output_file = File::create(output_path).expect("could not create output file");
 
     if args.c_array {
-        let mut type_width: TypeWideArray;
-
-        // Compute the default value first
-        match args.format {
-            Format::Ci4 => type_width = TypeWideArray::U8,
-            Format::Ci8 => type_width = TypeWideArray::U8,
-            Format::I4 => type_width = TypeWideArray::U8,
-            Format::I8 => type_width = TypeWideArray::U8,
-            Format::Ia4 => type_width = TypeWideArray::U8,
-            Format::Ia8 => type_width = TypeWideArray::U8,
-            Format::Ia16 => type_width = TypeWideArray::U16,
-            Format::Rgba16 => type_width = TypeWideArray::U16,
-            Format::Rgba32 => type_width = TypeWideArray::U32,
-            Format::Palette => type_width = TypeWideArray::U16,
-        }
+        let mut type_width = args.format.get_width();
 
         // Override if the user passed the appropriate flag
         type_width = args.type_width.unwrap_or(type_width);
