@@ -195,7 +195,7 @@ fn main() {
             Format::Palette => type_width = TypeWideArray::U16,
         }
 
-        // Override if the user passed the appropiate flag
+        // Override if the user passed the appropriate flag
         type_width = args.type_width.unwrap_or(type_width);
 
         match type_width {
