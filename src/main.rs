@@ -34,7 +34,7 @@ struct Args {
 
     /// Overrides the natural fit of each format when outputting a C array
     #[arg(short, long, value_enum)]
-    type_width: Option<TypeWideArray>,
+    type_width: Option<TypeWidthArray>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
@@ -52,7 +52,7 @@ enum Format {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
-enum TypeWideArray {
+enum TypeWidthArray {
     U8,
     U16,
     U32,
@@ -60,18 +60,18 @@ enum TypeWideArray {
 }
 
 impl Format {
-    fn get_width(&self) -> TypeWideArray {
+    fn get_width(&self) -> TypeWidthArray {
         match self {
-            Format::Ci4 => TypeWideArray::U8,
-            Format::Ci8 => TypeWideArray::U8,
-            Format::I4 => TypeWideArray::U8,
-            Format::I8 => TypeWideArray::U8,
-            Format::Ia4 => TypeWideArray::U8,
-            Format::Ia8 => TypeWideArray::U8,
-            Format::Ia16 => TypeWideArray::U16,
-            Format::Rgba16 => TypeWideArray::U16,
-            Format::Rgba32 => TypeWideArray::U32,
-            Format::Palette => TypeWideArray::U16,
+            Format::Ci4 => TypeWidthArray::U8,
+            Format::Ci8 => TypeWidthArray::U8,
+            Format::I4 => TypeWidthArray::U8,
+            Format::I8 => TypeWidthArray::U8,
+            Format::Ia4 => TypeWidthArray::U8,
+            Format::Ia8 => TypeWidthArray::U8,
+            Format::Ia16 => TypeWidthArray::U16,
+            Format::Rgba16 => TypeWidthArray::U16,
+            Format::Rgba32 => TypeWidthArray::U32,
+            Format::Palette => TypeWidthArray::U16,
         }
     }
 }
@@ -165,10 +165,10 @@ fn main() {
         type_width = args.type_width.unwrap_or(type_width);
 
         match type_width {
-            TypeWideArray::U8 => write_buf_as_u8(&mut output_file, &bin),
-            TypeWideArray::U16 => write_buf_as_u16(&mut output_file, &bin),
-            TypeWideArray::U32 => write_buf_as_u32(&mut output_file, &bin),
-            TypeWideArray::U64 => write_buf_as_u64(&mut output_file, &bin),
+            TypeWidthArray::U8 => write_buf_as_u8(&mut output_file, &bin),
+            TypeWidthArray::U16 => write_buf_as_u16(&mut output_file, &bin),
+            TypeWidthArray::U32 => write_buf_as_u32(&mut output_file, &bin),
+            TypeWidthArray::U64 => write_buf_as_u64(&mut output_file, &bin),
         }
     } else {
         BufWriter::new(output_file)
