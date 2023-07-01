@@ -1,6 +1,6 @@
 use clap::{Parser, ValueEnum};
 use std::fs::File;
-use std::io::prelude::*;
+use std::io::{self, prelude::*};
 use std::io::{BufReader, BufWriter};
 use std::mem;
 use std::path::PathBuf;
@@ -94,19 +94,19 @@ macro_rules! write_buf_as_raw_array {
     };
 }
 
-fn write_buf_as_u8(output_file: &mut File, bin: &Vec<u8>) {
+fn write_buf_as_u8(output_file: &mut Box<dyn Write>, bin: &Vec<u8>) {
     write_buf_as_raw_array!(output_file, bin, u8);
 }
 
-fn write_buf_as_u16(output_file: &mut File, bin: &Vec<u8>) {
+fn write_buf_as_u16(output_file: &mut Box<dyn Write>, bin: &Vec<u8>) {
     write_buf_as_raw_array!(output_file, bin, u16);
 }
 
-fn write_buf_as_u32(output_file: &mut File, bin: &Vec<u8>) {
+fn write_buf_as_u32(output_file: &mut Box<dyn Write>, bin: &Vec<u8>) {
     write_buf_as_raw_array!(output_file, bin, u32);
 }
 
-fn write_buf_as_u64(output_file: &mut File, bin: &Vec<u8>) {
+fn write_buf_as_u64(output_file: &mut Box<dyn Write>, bin: &Vec<u8>) {
     write_buf_as_raw_array!(output_file, bin, u64);
 }
 
@@ -140,13 +140,19 @@ fn main() {
         }
     };
 
-    let output_path = PathBuf::from(args.output.unwrap_or_else(|| {
-        let mut path = args.input.clone();
-        path.push_str(".bin");
-        path
-    }));
+    let mut output_file: Box<dyn Write>;
 
-    let mut output_file = File::create(output_path).expect("could not create output file");
+    if args.c_array {
+        output_file = Box::from(io::stdout());
+    } else {
+        let output_path = PathBuf::from(args.output.unwrap_or_else(|| {
+            let mut path = args.input.clone();
+            path.push_str(".bin");
+            path
+        }));
+
+        output_file = Box::from(File::create(output_path).unwrap());
+    }
 
     if args.c_array {
         let mut type_width = args.format.get_width();
