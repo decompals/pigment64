@@ -142,12 +142,16 @@ fn main() {
 
     let mut output_file: Box<dyn Write>;
 
-    if args.c_array {
+    if args.c_array && args.output.is_none() {
         output_file = Box::from(io::stdout());
     } else {
         let output_path = PathBuf::from(args.output.unwrap_or_else(|| {
             let mut path = args.input.clone();
-            path.push_str(".bin");
+            if args.c_array {
+                path.push_str(".inc.c");
+            } else {
+                path.push_str(".bin");
+            }
             path
         }));
 
