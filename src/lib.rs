@@ -1,28 +1,12 @@
+use crate::color::Color;
 use png::{BitDepth, ColorType};
 use std::io::prelude::*;
 
-// TODO: make this an option or sompthin, also ask clover
-#[inline]
-fn rgb_to_intensity(r: u8, g: u8, b: u8) -> u8 {
-    (r as f32 * 0.2126 + g as f32 * 0.7152 + 0.0722 * b as f32) as u8
-}
+pub mod color;
 
 #[inline]
 fn u8_to_u4(x: u8) -> u8 {
     x >> 4
-}
-
-#[inline]
-// convert rgba8888 to rgba16
-fn pack_color(r: u8, g: u8, b: u8, a: u8) -> (u8, u8) {
-    let r = (r >> 3) as u16;
-    let g = (g >> 3) as u16;
-    let b = (b >> 3) as u16;
-    let a = (a > 127) as u16;
-
-    let s = (r << 11) | (g << 6) | (b << 1) | a;
-
-    ((s >> 8) as u8, s as u8)
 }
 
 pub struct Image {
@@ -171,13 +155,13 @@ impl Image {
     */
 
     pub fn as_ci8(&self) -> Vec<u8> {
-        assert!(self.bit_depth == png::BitDepth::Eight);
-        assert!(self.color_type == png::ColorType::Indexed);
+        assert_eq!(self.bit_depth, BitDepth::Eight);
+        assert_eq!(self.color_type, ColorType::Indexed);
         self.data.to_vec()
     }
 
     pub fn as_ci4(&self) -> Vec<u8> {
-        assert!(self.color_type == png::ColorType::Indexed);
+        assert_eq!(self.color_type, ColorType::Indexed);
 
         match self.bit_depth {
             BitDepth::Four => self.data.to_vec(),
@@ -202,8 +186,11 @@ impl Image {
                 .data
                 .chunks_exact(8)
                 .map(|chunk| {
-                    let i1 = rgb_to_intensity(chunk[0], chunk[1], chunk[2]);
-                    let i2 = rgb_to_intensity(chunk[4], chunk[5], chunk[6]);
+                    let c1 = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
+                    let i1 = c1.rgb_to_intensity();
+                    let c2 = Color::RGBA(chunk[4], chunk[5], chunk[6], chunk[7]);
+                    let i2 = c2.rgb_to_intensity();
+
                     u8_to_u4(i1) << 4 | u8_to_u4(i2)
                 })
                 .collect(),
@@ -211,8 +198,11 @@ impl Image {
                 .data
                 .chunks_exact(6)
                 .map(|chunk| {
-                    let i1 = rgb_to_intensity(chunk[0], chunk[1], chunk[2]);
-                    let i2 = rgb_to_intensity(chunk[3], chunk[4], chunk[5]);
+                    let c1 = Color::RGB(chunk[0], chunk[1], chunk[2]);
+                    let i1 = c1.rgb_to_intensity();
+                    let c2 = Color::RGB(chunk[3], chunk[4], chunk[5]);
+                    let i2 = c2.rgb_to_intensity();
+
                     u8_to_u4(i1) << 4 | u8_to_u4(i2)
                 })
                 .collect(),
@@ -231,12 +221,18 @@ impl Image {
             (ColorType::Rgba, BitDepth::Eight) => self
                 .data
                 .chunks_exact(4)
-                .map(|chunk| rgb_to_intensity(chunk[0], chunk[1], chunk[2]))
+                .map(|chunk| {
+                    let c = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
+                    c.rgb_to_intensity()
+                })
                 .collect(),
             (ColorType::Rgb, BitDepth::Eight) => self
                 .data
                 .chunks_exact(3)
-                .map(|chunk| rgb_to_intensity(chunk[0], chunk[1], chunk[2]))
+                .map(|chunk| {
+                    let c = Color::RGB(chunk[0], chunk[1], chunk[2]);
+                    c.rgb_to_intensity()
+                })
                 .collect(),
             p => panic!("unsupported format {:?}", p),
         }
@@ -287,8 +283,9 @@ impl Image {
                 .data
                 .chunks_exact(4)
                 .flat_map(|chunk| {
-                    let (first, second) = pack_color(chunk[0], chunk[1], chunk[2], chunk[3]);
-                    [first, second].into_iter()
+                    let color = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
+                    let (high, low) = color.rgba16();
+                    vec![high, low]
                 })
                 .collect(),
             p => panic!("unsupported format {:?}", p),
@@ -315,8 +312,9 @@ pub fn get_palette_rgba16<R: Read>(r: R) -> Vec<u8> {
             .chunks_exact(3)
             .zip(alpha_data.iter())
             .flat_map(|(rgb, &alpha)| {
-                let (first, second) = pack_color(rgb[0], rgb[1], rgb[2], alpha);
-                [first, second].into_iter()
+                let color = Color::RGBA(rgb[0], rgb[1], rgb[2], alpha);
+                let (high, low) = color.rgba16();
+                vec![high, low]
             })
             .collect(),
 
@@ -324,8 +322,9 @@ pub fn get_palette_rgba16<R: Read>(r: R) -> Vec<u8> {
         None => rgb_data
             .chunks_exact(3)
             .flat_map(|rgb| {
-                let (first, second) = pack_color(rgb[0], rgb[1], rgb[2], 0xFF);
-                [first, second].into_iter()
+                let color = Color::RGB(rgb[0], rgb[1], rgb[2]);
+                let (high, low) = color.rgba16();
+                vec![high, low]
             })
             .collect(),
     }
