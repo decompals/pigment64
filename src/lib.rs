@@ -1,5 +1,5 @@
+use png::{BitDepth, ColorType};
 use std::io::prelude::*;
-use png::{ColorType, BitDepth};
 
 // TODO: make this an option or sompthin, also ask clover
 #[inline]
@@ -19,8 +19,8 @@ fn pack_color(r: u8, g: u8, b: u8, a: u8) -> (u8, u8) {
     let g = (g >> 3) as u16;
     let b = (b >> 3) as u16;
     let a = (a > 127) as u16;
-    
-    let s = (r << 11) | (g << 6) | ( b << 1) | a;
+
+    let s = (r << 11) | (g << 6) | (b << 1) | a;
 
     ((s >> 8) as u8, s as u8)
 }
@@ -62,29 +62,42 @@ impl Image {
                 for y in 0..self.height {
                     for x in 0..self.width {
                         let old_index = (y * self.width + x) as usize * self.color_type.samples();
-                        let new_index = ((self.height - y - 1) * self.width + (self.width - x - 1)) as usize * self.color_type.samples();
-                        flipped_bytes[new_index..new_index + self.color_type.samples()].copy_from_slice(&self.data[old_index..old_index + self.color_type.samples()]);
+                        let new_index = ((self.height - y - 1) * self.width + (self.width - x - 1))
+                            as usize
+                            * self.color_type.samples();
+                        flipped_bytes[new_index..new_index + self.color_type.samples()]
+                            .copy_from_slice(
+                                &self.data[old_index..old_index + self.color_type.samples()],
+                            );
                     }
                 }
-            },
+            }
             (true, false) => {
                 for y in 0..self.height {
                     for x in 0..self.width {
                         let old_index = (y * self.width + x) as usize * self.color_type.samples();
-                        let new_index = (y * self.width + (self.width - x - 1)) as usize * self.color_type.samples();
-                        flipped_bytes[new_index..new_index + self.color_type.samples()].copy_from_slice(&self.data[old_index..old_index + self.color_type.samples()]);
+                        let new_index = (y * self.width + (self.width - x - 1)) as usize
+                            * self.color_type.samples();
+                        flipped_bytes[new_index..new_index + self.color_type.samples()]
+                            .copy_from_slice(
+                                &self.data[old_index..old_index + self.color_type.samples()],
+                            );
                     }
                 }
-            },
+            }
             (false, true) => {
                 for y in 0..self.height {
                     for x in 0..self.width {
                         let old_index = (y * self.width + x) as usize * self.color_type.samples();
-                        let new_index = ((self.height - y - 1) * self.width + x) as usize * self.color_type.samples();
-                        flipped_bytes[new_index..new_index + self.color_type.samples()].copy_from_slice(&self.data[old_index..old_index + self.color_type.samples()]);
+                        let new_index = ((self.height - y - 1) * self.width + x) as usize
+                            * self.color_type.samples();
+                        flipped_bytes[new_index..new_index + self.color_type.samples()]
+                            .copy_from_slice(
+                                &self.data[old_index..old_index + self.color_type.samples()],
+                            );
                     }
                 }
-            },
+            }
             (false, false) => {
                 flipped_bytes.copy_from_slice(&self.data);
             }
@@ -168,22 +181,25 @@ impl Image {
 
         match self.bit_depth {
             BitDepth::Four => self.data.to_vec(),
-            BitDepth::Eight => self.data
+            BitDepth::Eight => self
+                .data
                 .chunks_exact(2)
                 .map(|chunk| chunk[0] << 4 | chunk[1])
                 .collect(),
-            _ => panic!("unsupported bit depth: {:?}", self.bit_depth)
+            _ => panic!("unsupported bit depth: {:?}", self.bit_depth),
         }
     }
 
     pub fn as_i4(&self) -> Vec<u8> {
         match (self.color_type, self.bit_depth) {
             (ColorType::Grayscale, BitDepth::Four) => self.data.to_vec(),
-            (ColorType::Grayscale, BitDepth::Eight) => self.data
+            (ColorType::Grayscale, BitDepth::Eight) => self
+                .data
                 .chunks_exact(2)
                 .map(|chunk| u8_to_u4(chunk[0]) << 4 | u8_to_u4(chunk[1]))
                 .collect(),
-            (ColorType::Rgba, BitDepth::Eight) => self.data
+            (ColorType::Rgba, BitDepth::Eight) => self
+                .data
                 .chunks_exact(8)
                 .map(|chunk| {
                     let i1 = rgb_to_intensity(chunk[0], chunk[1], chunk[2]);
@@ -191,7 +207,8 @@ impl Image {
                     u8_to_u4(i1) << 4 | u8_to_u4(i2)
                 })
                 .collect(),
-            (ColorType::Rgb, BitDepth::Eight) => self.data
+            (ColorType::Rgb, BitDepth::Eight) => self
+                .data
                 .chunks_exact(6)
                 .map(|chunk| {
                     let i1 = rgb_to_intensity(chunk[0], chunk[1], chunk[2]);
@@ -199,32 +216,36 @@ impl Image {
                     u8_to_u4(i1) << 4 | u8_to_u4(i2)
                 })
                 .collect(),
-            p => panic!("unsupported format {:?}", p)
+            p => panic!("unsupported format {:?}", p),
         }
     }
 
     pub fn as_i8(&self) -> Vec<u8> {
         match (self.color_type, self.bit_depth) {
             (ColorType::Grayscale, BitDepth::Eight) => self.data.to_vec(),
-            (ColorType::Grayscale, BitDepth::Four) => self.data
+            (ColorType::Grayscale, BitDepth::Four) => self
+                .data
                 .chunks_exact(2)
                 .map(|chunk| chunk[0] << 4 | chunk[1])
                 .collect(),
-            (ColorType::Rgba, BitDepth::Eight) => self.data
+            (ColorType::Rgba, BitDepth::Eight) => self
+                .data
                 .chunks_exact(4)
                 .map(|chunk| rgb_to_intensity(chunk[0], chunk[1], chunk[2]))
                 .collect(),
-            (ColorType::Rgb, BitDepth::Eight) => self.data
+            (ColorType::Rgb, BitDepth::Eight) => self
+                .data
                 .chunks_exact(3)
                 .map(|chunk| rgb_to_intensity(chunk[0], chunk[1], chunk[2]))
                 .collect(),
-            p => panic!("unsupported format {:?}", p)
+            p => panic!("unsupported format {:?}", p),
         }
     }
 
     pub fn as_ia4(&self) -> Vec<u8> {
         match (self.color_type, self.bit_depth) {
-            (ColorType::GrayscaleAlpha, BitDepth::Eight) => self.data
+            (ColorType::GrayscaleAlpha, BitDepth::Eight) => self
+                .data
                 .chunks_exact(4)
                 .map(|chunk| {
                     let intensity = (chunk[0] >> 5) << 1;
@@ -238,44 +259,46 @@ impl Image {
                     high << 4 | (low & 0xF)
                 })
                 .collect(),
-            p => panic!("unsupported format {:?}", p)
+            p => panic!("unsupported format {:?}", p),
         }
     }
 
     pub fn as_ia8(&self) -> Vec<u8> {
         match (self.color_type, self.bit_depth) {
-            (ColorType::GrayscaleAlpha, BitDepth::Eight) => self.data
+            (ColorType::GrayscaleAlpha, BitDepth::Eight) => self
+                .data
                 .chunks_exact(2)
                 .map(|chunk| chunk[0] << 4 | (chunk[1] & 0x0F))
                 .collect(),
-            p => panic!("unsupported format {:?}", p)
+            p => panic!("unsupported format {:?}", p),
         }
     }
 
     pub fn as_ia16(&self) -> Vec<u8> {
         match (self.color_type, self.bit_depth) {
             (ColorType::GrayscaleAlpha, BitDepth::Eight) => self.data.to_vec(),
-            p => panic!("unsupported format {:?}", p)
+            p => panic!("unsupported format {:?}", p),
         }
     }
 
     pub fn as_rgba16(&self) -> Vec<u8> {
         match (self.color_type, self.bit_depth) {
-            (ColorType::Rgba, BitDepth::Eight) => self.data
+            (ColorType::Rgba, BitDepth::Eight) => self
+                .data
                 .chunks_exact(4)
                 .flat_map(|chunk| {
                     let (first, second) = pack_color(chunk[0], chunk[1], chunk[2], chunk[3]);
                     [first, second].into_iter()
                 })
                 .collect(),
-            p => panic!("unsupported format {:?}", p)
+            p => panic!("unsupported format {:?}", p),
         }
     }
 
     pub fn as_rgba32(&self) -> Vec<u8> {
         match (self.color_type, self.bit_depth) {
             (ColorType::Rgba, BitDepth::Eight) => self.data.to_vec(),
-            p => panic!("unsupported format {:?}", p)
+            p => panic!("unsupported format {:?}", p),
         }
     }
 }

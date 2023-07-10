@@ -94,19 +94,19 @@ macro_rules! write_buf_as_raw_array {
     };
 }
 
-fn write_buf_as_u8(output_file: &mut Box<dyn Write>, bin: &Vec<u8>) {
+fn write_buf_as_u8(output_file: &mut Box<dyn Write>, bin: &[u8]) {
     write_buf_as_raw_array!(output_file, bin, u8);
 }
 
-fn write_buf_as_u16(output_file: &mut Box<dyn Write>, bin: &Vec<u8>) {
+fn write_buf_as_u16(output_file: &mut Box<dyn Write>, bin: &[u8]) {
     write_buf_as_raw_array!(output_file, bin, u16);
 }
 
-fn write_buf_as_u32(output_file: &mut Box<dyn Write>, bin: &Vec<u8>) {
+fn write_buf_as_u32(output_file: &mut Box<dyn Write>, bin: &[u8]) {
     write_buf_as_raw_array!(output_file, bin, u32);
 }
 
-fn write_buf_as_u64(output_file: &mut Box<dyn Write>, bin: &Vec<u8>) {
+fn write_buf_as_u64(output_file: &mut Box<dyn Write>, bin: &[u8]) {
     write_buf_as_raw_array!(output_file, bin, u64);
 }
 
