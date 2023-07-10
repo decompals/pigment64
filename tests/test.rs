@@ -1,5 +1,5 @@
-use std::io::Cursor;
 use pigment::*;
+use std::io::Cursor;
 
 // TODO: convert input into all permutations of color type and bit depth
 // to test all codepaths
