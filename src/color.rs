@@ -40,16 +40,12 @@ impl Color {
         let b = ((pixel >> 1) & 0x1F) as u8;
         let a = (pixel & 0x01) as u8;
 
-        let r_normalized = r as f32 / 31.0 * 255.0;
-        let g_normalized = g as f32 / 31.0 * 255.0;
-        let b_normalized = b as f32 / 31.0 * 255.0;
+        let r = (r << 3) | (r >> 2);
+        let g = (g << 3) | (g >> 2);
+        let b = (b << 3) | (b >> 2);
+        let a = 255 * a;
 
-        Color::RGBA(
-            r_normalized as u8,
-            g_normalized as u8,
-            b_normalized as u8,
-            a * 255,
-        )
+        Color { r, g, b, a }
     }
 
     /// Converts a 32-bit RGBA color to a 16-bit RGBA pixel.

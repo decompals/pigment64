@@ -31,7 +31,7 @@ fn test_color_from_u16() {
 
     // Test case 3: Random pixel value
     let pixel: u16 = 0b1101010101010101; // Binary: 11010 10101 01010 101
-    let color = Color::RGBA(213, 172, 82, 255);
+    let color = Color::RGBA(214, 173, 82, 255);
     assert_eq!(Color::from_u16(pixel), color);
 }
 
