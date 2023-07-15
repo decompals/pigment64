@@ -1,4 +1,4 @@
-use pigment::*;
+use pigment64::*;
 use std::io::Cursor;
 
 // TODO: convert input into all permutations of color type and bit depth

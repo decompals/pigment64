@@ -1,8 +1,8 @@
 [package]
-name = "pigment"
-version = "0.2.0"
+name = "pigment64"
+version = "0.2.1"
 edition = "2021"
 
 [dependencies]
-png = "0.17.7"
-clap = { version = "4.1.11", features = ["derive"] }
+png = "0.17.9"
+clap = { version = "4.1.12", features = ["derive"] }

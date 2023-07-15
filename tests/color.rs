@@ -1,4 +1,4 @@
-use pigment::color::Color;
+use pigment64::color::Color;
 
 #[test]
 fn test_color_new() {
