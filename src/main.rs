@@ -118,9 +118,9 @@ fn main() {
 
     // Convert the image
     let bin = if let Format::Palette = args.format {
-        pigment64::get_palette_rgba16(&mut input_reader)
+        pigment64::create_palette_from_png(&mut input_reader)
     } else {
-        let mut image = pigment64::Image::read_png(&mut input_reader);
+        let mut image = pigment64::PNGImage::read_png(&mut input_reader);
 
         if args.flip_x || args.flip_y {
             image = image.flip(args.flip_x, args.flip_y);

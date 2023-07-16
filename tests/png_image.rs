@@ -1,5 +1,5 @@
-use pigment64::*;
 use std::io::Cursor;
+use pigment64::PNGImage;
 
 // TODO: convert input into all permutations of color type and bit depth
 // to test all codepaths
@@ -37,7 +37,7 @@ use std::io::Cursor;
 #[test]
 fn i8() -> Result<(), Box<dyn std::error::Error>> {
     let input_bytes = include_bytes!("i8.png");
-    let image = Image::read_png(&mut Cursor::new(input_bytes));
+    let image = PNGImage::read_png(&mut Cursor::new(input_bytes));
 
     let expected_bytes = include_bytes!("i8.png.bin");
     assert_eq!(image.as_i8(), expected_bytes);
@@ -57,7 +57,7 @@ fn i8() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn ia8() -> Result<(), Box<dyn std::error::Error>> {
     let input_bytes = include_bytes!("ia8.png");
-    let image = Image::read_png(&mut Cursor::new(input_bytes));
+    let image = PNGImage::read_png(&mut Cursor::new(input_bytes));
 
     let expected_bytes = include_bytes!("ia8.png.bin");
     assert_eq!(image.as_ia8(), expected_bytes);
@@ -67,7 +67,7 @@ fn ia8() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn ia16() -> Result<(), Box<dyn std::error::Error>> {
     let input_bytes = include_bytes!("ia16.png");
-    let image = Image::read_png(&mut Cursor::new(input_bytes));
+    let image = PNGImage::read_png(&mut Cursor::new(input_bytes));
 
     let expected_bytes = include_bytes!("ia16.png.bin");
     assert_eq!(image.as_ia16(), expected_bytes);
@@ -77,7 +77,7 @@ fn ia16() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn rgba16() -> Result<(), Box<dyn std::error::Error>> {
     let input_bytes = include_bytes!("rgba16.png");
-    let image = Image::read_png(&mut Cursor::new(input_bytes));
+    let image = PNGImage::read_png(&mut Cursor::new(input_bytes));
 
     let expected_bytes = include_bytes!("rgba16.png.bin");
     assert_eq!(image.as_rgba16(), expected_bytes);
@@ -87,7 +87,7 @@ fn rgba16() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn rgba32() -> Result<(), Box<dyn std::error::Error>> {
     let input_bytes = include_bytes!("rgba32.png");
-    let image = Image::read_png(&mut Cursor::new(input_bytes));
+    let image = PNGImage::read_png(&mut Cursor::new(input_bytes));
 
     let expected_bytes = include_bytes!("rgba32.png.bin");
     assert_eq!(image.as_rgba32(), expected_bytes);
