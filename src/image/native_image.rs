@@ -29,7 +29,7 @@ impl NativeImage {
         })
     }
 
-    /// Decodes the image into RGBA32 format and writes it image bytes to the given writer.
+    /// Decodes the image into RGBA8 format and writes it image bytes to the given writer.
     pub fn decode<W: Write>(&self, writer: &mut W, tlut_color_table: Option<&[u8]>) -> Result<()> {
         let mut cursor = Cursor::new(&self.data);
 
@@ -142,7 +142,8 @@ impl NativeImage {
         Ok(())
     }
 
-    /// Decodes the image into RGBA32 format and writes it as PNG to the given writer.
+    /// Decodes the image into RGBA8 and writes it as PNG to the given writer.
+    /// Exception is CI4 and CI8, which get written as an indexed PNG.
     pub fn as_png<W: Write>(&self, writer: &mut W, tlut_color_table: Option<&[u8]>) -> Result<()> {
         let mut data: Vec<u8> = vec![];
         let mut encoder = png::Encoder::new(writer, self.width, self.height);
@@ -233,7 +234,7 @@ impl NativeImage {
     }
 }
 
-/// Parses a tlut into a RGBA32 color table
+/// Parses a tlut into a RGBA8 color table
 pub fn parse_tlut(bytes: &[u8], size: ImageSize, mode: TextureLUT) -> Result<Vec<u8>> {
     assert_eq!(
         mode,
