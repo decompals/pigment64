@@ -1,6 +1,10 @@
 use crate::color::Color;
+use clap::ValueEnum;
 use png::{BitDepth, ColorType};
-use std::io::prelude::*;
+use std::{
+    fs::File,
+    io::{prelude::*, BufReader},
+};
 
 pub mod color;
 
@@ -328,4 +332,60 @@ pub fn get_palette_rgba16<R: Read>(r: R) -> Vec<u8> {
             })
             .collect(),
     }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
+enum Format {
+    Ci4,
+    Ci8,
+    I4,
+    I8,
+    Ia4,
+    Ia8,
+    Ia16,
+    Rgba16,
+    Rgba32,
+    Palette,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
+enum TypeWidthArray {
+    U8,
+    U16,
+    U32,
+    U64,
+}
+
+use pyo3::prelude::*;
+
+#[pyfunction]
+fn png_path_to_bytes(_py: Python<'_>, path: &str, fmt: &str) -> PyResult<Vec<u8>> {
+    let input_file = File::open(path).expect("could not open input file");
+    let mut input_reader = BufReader::new(input_file);
+
+    let mut image = Image::read_png(&mut input_reader);
+
+    image = image.flip(false, true);
+
+    let bin = match fmt {
+        "ci4" => image.as_ci4(),
+        "ci8" => image.as_ci8(),
+        "i4" => image.as_i4(),
+        "i8" => image.as_i8(),
+        "ia4" => image.as_ia4(),
+        "ia8" => image.as_ia8(),
+        "ia16" => image.as_ia16(),
+        "rgba16" => image.as_rgba16(),
+        "rgba32" => image.as_rgba32(),
+        "palette" => unreachable!(),
+        _ => panic!("unsupported format"),
+    };
+
+    Ok(bin)
+}
+
+#[pymodule]
+fn pigment64(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(png_path_to_bytes, m)?)?;
+    Ok(())
 }

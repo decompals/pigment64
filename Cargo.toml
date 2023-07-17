@@ -2,9 +2,14 @@
 name = "pigment64"
 description = "A library for handling conversion between N64 texture formats and modern image formats"
 license = "MIT"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
+
+[lib]
+name = "pigment64"
+crate-type = ["cdylib", "rlib", "bin"]
 
 [dependencies]
 png = "0.17.9"
 clap = { version = "4.1.12", features = ["derive"] }
+pyo3 = { version = "0.19.1", features = ["extension-module"] }

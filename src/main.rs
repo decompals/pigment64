@@ -37,28 +37,6 @@ struct Args {
     type_width: Option<TypeWidthArray>,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
-enum Format {
-    Ci4,
-    Ci8,
-    I4,
-    I8,
-    Ia4,
-    Ia8,
-    Ia16,
-    Rgba16,
-    Rgba32,
-    Palette,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
-enum TypeWidthArray {
-    U8,
-    U16,
-    U32,
-    U64,
-}
-
 impl Format {
     fn get_width(&self) -> TypeWidthArray {
         match self {
