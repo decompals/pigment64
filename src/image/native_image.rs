@@ -1,21 +1,8 @@
 use crate::color::Color;
-use crate::ImageType;
+use crate::{ImageSize, ImageType, TextureLUT};
 use anyhow::Result;
 use byteorder::{BigEndian, ReadBytesExt};
-use std::io::{Read, Write};
-
-/// reads an rgba color from a buffer starting at the given offset
-fn get_tlut_color(tlut_color_table: Option<&[u8]>, index: u8) -> [u8; 4] {
-    if let Some(tlut_color_table) = tlut_color_table {
-        let r = tlut_color_table[(index * 4) as usize];
-        let g = tlut_color_table[((index * 4) + 1) as usize];
-        let b = tlut_color_table[((index * 4) + 2) as usize];
-        let a = tlut_color_table[((index * 4) + 3) as usize];
-        [r, g, b, a]
-    } else {
-        [index, index, index, 0xFF]
-    }
-}
+use std::io::{Cursor, Read, Write};
 
 pub struct NativeImage {
     pub format: ImageType,
@@ -42,9 +29,9 @@ impl NativeImage {
         })
     }
 
-    /// Decodes the image into RGBA32 format.
+    /// Decodes the image into RGBA32 format and writes it image bytes to the given writer.
     pub fn decode<W: Write>(&self, writer: &mut W, tlut_color_table: Option<&[u8]>) -> Result<()> {
-        let mut cursor = std::io::Cursor::new(&self.data);
+        let mut cursor = Cursor::new(&self.data);
 
         match self.format {
             ImageType::I4 => {
@@ -153,5 +140,86 @@ impl NativeImage {
         }
 
         Ok(())
+    }
+
+    /// Decodes the image into RGBA32 format and writes it as PNG to the given writer.
+    pub fn as_png<W: Write>(&self, writer: &mut W, tlut_color_table: Option<&[u8]>) -> Result<()> {
+        let mut data: Vec<u8> = vec![];
+        let mut encoder = png::Encoder::new(writer, self.width, self.height);
+
+        match self.format {
+            ImageType::I4 => {
+                self.decode(&mut data, None)?;
+            }
+            ImageType::I8 => {
+                self.decode(&mut data, None)?;
+            }
+            ImageType::Ia4 => {
+                self.decode(&mut data, None)?;
+            }
+            ImageType::Ia8 => {
+                self.decode(&mut data, None)?;
+            }
+            ImageType::Ia16 => {
+                self.decode(&mut data, None)?;
+            }
+            ImageType::Ci4 => {
+                assert!(tlut_color_table.is_some());
+                self.decode(&mut data, tlut_color_table)?;
+            }
+            ImageType::Ci8 => {
+                assert!(tlut_color_table.is_some());
+                self.decode(&mut data, tlut_color_table)?;
+            }
+            ImageType::Rgba16 => {
+                self.decode(&mut data, None)?;
+            }
+            ImageType::Rgba32 => {
+                self.decode(&mut data, None)?;
+            }
+        }
+
+        encoder.set_color(png::ColorType::Rgba);
+        encoder.set_depth(png::BitDepth::Eight);
+
+        let mut writer = encoder.write_header()?;
+        writer.write_image_data(&data)?;
+
+        Ok(())
+    }
+}
+
+/// Parses a tlut into a RGBA32 color table
+pub fn parse_tlut<W: Write>(
+    cursor: &mut Cursor<&[u8]>,
+    writer: &mut W,
+    size: ImageSize,
+    mode: TextureLUT,
+) -> Result<()> {
+    assert_eq!(
+        mode,
+        TextureLUT::Rgba16,
+        "Only RGBA16 TLUTs are supported at the moment"
+    );
+
+    for _i in 0..(size.get_tlut_size()) {
+        let pixel = cursor.read_u16::<BigEndian>()?;
+        let color = Color::from_u16(pixel);
+        writer.write_all(&color.rgba16())?;
+    }
+
+    Ok(())
+}
+
+/// Reads an rgba color from a buffer starting at the given offset
+fn get_tlut_color(tlut_color_table: Option<&[u8]>, index: u8) -> [u8; 4] {
+    if let Some(tlut_color_table) = tlut_color_table {
+        let r = tlut_color_table[(index * 4) as usize];
+        let g = tlut_color_table[((index * 4) + 1) as usize];
+        let b = tlut_color_table[((index * 4) + 2) as usize];
+        let a = tlut_color_table[((index * 4) + 3) as usize];
+        [r, g, b, a]
+    } else {
+        [index, index, index, 0xFF]
     }
 }

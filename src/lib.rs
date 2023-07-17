@@ -16,6 +16,18 @@ pub enum ImageSize {
     DD = 5,
 }
 
+impl ImageSize {
+    fn get_tlut_size(&self) -> usize {
+        match self {
+            ImageSize::Bits4 => 0x10,
+            ImageSize::Bits8 => 0x100,
+            ImageSize::Bits16 => 0x1000,
+            ImageSize::Bits32 => 0x10000,
+            _ => panic!("Invalid size: {:?}", self),
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum ImageFormat {
     Rgba = 0,
@@ -66,4 +78,12 @@ impl ImageType {
             ImageType::Rgba32 => ImageFormat::Rgba,
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[repr(u8)]
+pub enum TextureLUT {
+    None = 0,
+    Rgba16 = 2,
+    Ia16 = 3,
 }
