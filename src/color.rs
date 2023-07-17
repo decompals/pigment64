@@ -82,6 +82,6 @@ impl Color {
     /// This is used for grayscale images.
     #[inline]
     pub fn rgb_to_intensity(&self) -> u8 {
-        (self.r as f32 * 0.2126 + self.g as f32 * 0.7152 + 0.0722 * self.b as f32) as u8
+        (self.r as f32 * 0.2126 + self.g as f32 * 0.7152 + 0.0722 * self.b as f32).round() as u8
     }
 }
