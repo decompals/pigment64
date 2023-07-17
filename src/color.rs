@@ -32,6 +32,17 @@ impl Color {
         Color { r, g, b, a: 0xFF }
     }
 
+    /// Creates a new color from a 32-bit RGBA pixel.
+    #[inline]
+    pub fn from_u32(pixel: u32) -> Color {
+        let r = ((pixel >> 24) & 0xFF) as u8;
+        let g = ((pixel >> 16) & 0xFF) as u8;
+        let b = ((pixel >> 8) & 0xFF) as u8;
+        let a = (pixel & 0xFF) as u8;
+
+        Color { r, g, b, a }
+    }
+
     /// Converts a 16-bit RGBA pixel to a 32-bit RGBA color.
     #[inline]
     pub fn from_u16(pixel: u16) -> Color {
@@ -62,9 +73,9 @@ impl Color {
     /// Converts a 32-bit RGBA color to a 16-bit RGBA pixel and
     /// returns the two 8-bit components.
     #[inline]
-    pub fn rgba16(self) -> (u8, u8) {
+    pub fn rgba16(self) -> [u8; 2] {
         let pixel = self.to_u16();
-        ((pixel >> 8) as u8, (pixel & 0xFF) as u8)
+        [(pixel >> 8) as u8, (pixel & 0xFF) as u8]
     }
 
     /// Converts the rgb components to a single intensity value.

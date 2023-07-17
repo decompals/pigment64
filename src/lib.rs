@@ -1,6 +1,7 @@
 pub mod color;
 
 pub mod image;
+pub use image::native_image::NativeImage;
 pub use image::png_image::create_palette_from_png;
 pub use image::png_image::PNGImage;
 
