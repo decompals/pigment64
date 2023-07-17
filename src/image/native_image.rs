@@ -1,7 +1,7 @@
 use crate::color::Color;
 use crate::{ImageSize, ImageType, TextureLUT};
 use anyhow::Result;
-use byteorder::{BigEndian, ReadBytesExt};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Cursor, Read, Write};
 
 pub struct NativeImage {
@@ -165,11 +165,45 @@ impl NativeImage {
             }
             ImageType::Ci4 => {
                 assert!(tlut_color_table.is_some());
-                self.decode(&mut data, tlut_color_table)?;
+                let mut data: Vec<u8> = vec![];
+                let mut cursor = Cursor::new(&mut data);
+
+                for _y in 0..self.height {
+                    for _x in (0..self.width).step_by(2) {
+                        let byte = cursor.read_u8()?;
+                        cursor.write_u8(byte)?;
+                    }
+                }
+
+                encoder.set_palette(tlut_color_table.unwrap());
+                encoder.set_color(png::ColorType::Indexed);
+                encoder.set_depth(png::BitDepth::Four);
+
+                let mut writer = encoder.write_header()?;
+                writer.write_image_data(&data)?;
+
+                return Ok(());
             }
             ImageType::Ci8 => {
                 assert!(tlut_color_table.is_some());
-                self.decode(&mut data, tlut_color_table)?;
+                let mut data: Vec<u8> = vec![];
+                let mut cursor = Cursor::new(&mut data);
+
+                for _y in 0..self.height {
+                    for _x in 0..self.width {
+                        let index = cursor.read_u8()?;
+                        cursor.write_u8(index)?;
+                    }
+                }
+
+                encoder.set_palette(tlut_color_table.unwrap());
+                encoder.set_color(png::ColorType::Indexed);
+                encoder.set_depth(png::BitDepth::Eight);
+
+                let mut writer = encoder.write_header()?;
+                writer.write_image_data(&data)?;
+
+                return Ok(());
             }
             ImageType::Rgba16 => {
                 self.decode(&mut data, None)?;
