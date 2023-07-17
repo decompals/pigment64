@@ -1,7 +1,22 @@
 use anyhow::Result;
 use pigment64::{ImageType, NativeImage, PNGImage};
 
-const DEBUG: bool = false;
+#[test]
+fn i4() -> Result<()> {
+    let original_bytes: &[u8] = include_bytes!("i4.png.bin");
+    let image = NativeImage::read(original_bytes, ImageType::I4, 16, 1)?;
+
+    let mut output: Vec<u8> = Vec::new();
+    image.as_png(&mut output, None)?;
+
+    // convert the png back to a native image
+    let image = PNGImage::read(output.as_slice())?;
+    let mut output_bytes: Vec<u8> = Vec::new();
+    image.as_i4(&mut output_bytes)?;
+
+    assert_eq!(output_bytes, original_bytes);
+    Ok(())
+}
 
 #[test]
 fn i8() -> Result<()> {
@@ -15,6 +30,23 @@ fn i8() -> Result<()> {
     let image = PNGImage::read(output.as_slice())?;
     let mut output_bytes: Vec<u8> = Vec::new();
     image.as_i8(&mut output_bytes)?;
+
+    assert_eq!(output_bytes, original_bytes);
+    Ok(())
+}
+
+#[test]
+fn ia4() -> Result<()> {
+    let original_bytes: &[u8] = include_bytes!("ia4.png.bin");
+    let image = NativeImage::read(original_bytes, ImageType::Ia4, 16, 1)?;
+
+    let mut output: Vec<u8> = Vec::new();
+    image.as_png(&mut output, None)?;
+
+    // convert the png back to a native image
+    let image = PNGImage::read(output.as_slice())?;
+    let mut output_bytes: Vec<u8> = Vec::new();
+    image.as_ia4(&mut output_bytes)?;
 
     assert_eq!(output_bytes, original_bytes);
     Ok(())

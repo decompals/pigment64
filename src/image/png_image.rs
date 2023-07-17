@@ -198,15 +198,16 @@ impl PNGImage {
             }
             (ColorType::Rgba, BitDepth::Eight) => self.data.chunks_exact(8).for_each(|chunk| {
                 let c1 = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
-                let i1 = (c1.rgb_to_intensity() >> 4) & 0xF;
-                let a1 = (c1.a >> 4) & 0xF;
+                let intensity1 = (c1.rgb_to_intensity() >> 5) << 1;
+                let alpha1 = (c1.a > 127) as u8;
 
                 let c2 = Color::RGBA(chunk[4], chunk[5], chunk[6], chunk[7]);
-                let i2 = (c2.rgb_to_intensity() >> 4) & 0xF;
-                let a2 = (c2.a >> 4) & 0xF;
+                let intensity2 = (c2.rgb_to_intensity() >> 5) << 1;
+                let alpha2 = (c2.a > 127) as u8;
 
-                writer.write_u8(i1 << 4 | a1).unwrap();
-                writer.write_u8(i2 << 4 | a2).unwrap();
+                let high = intensity1 | alpha1;
+                let low = intensity2 | alpha2;
+                writer.write_u8(high << 4 | (low & 0xF)).unwrap();
             }),
             p => panic!("unsupported format {:?}", p),
         }
