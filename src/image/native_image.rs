@@ -51,7 +51,7 @@ impl NativeImage {
                 for _y in 0..self.height {
                     for _x in 0..self.width {
                         let intensity = cursor.read_u8()?;
-                        writer.write_all(&[intensity, intensity, intensity, intensity])?;
+                        writer.write_all(&[intensity, intensity, intensity, 0xFF])?;
                     }
                 }
             }
@@ -124,7 +124,7 @@ impl NativeImage {
                     for _x in 0..self.width {
                         let pixel = cursor.read_u16::<BigEndian>()?;
                         let color = Color::from_u16(pixel);
-                        writer.write_all(&color.rgba16())?;
+                        writer.write_all(&[color.r, color.g, color.b, color.a])?;
                     }
                 }
             }
