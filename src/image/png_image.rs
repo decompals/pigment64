@@ -1,7 +1,10 @@
-use std::io::Read;
-use png::{BitDepth, ColorType};
 use crate::color::Color;
 use crate::utils::u8_to_u4;
+use anyhow::Result;
+use png::{BitDepth, ColorType};
+use std::io::{Read, Write};
+use byteorder::{BigEndian, WriteBytesExt};
+use crate::ImageType;
 
 pub struct PNGImage {
     data: Vec<u8>,
@@ -12,24 +15,24 @@ pub struct PNGImage {
 }
 
 impl PNGImage {
-    pub fn read_png<R: Read>(r: R) -> PNGImage {
+    pub fn read<R: Read>(r: R) -> Result<Self> {
         let decoder = png::Decoder::new(r);
-        let mut reader = decoder.read_info().unwrap();
+        let mut reader = decoder.read_info()?;
         // Allocate the output buffer.
         let mut buf = vec![0; reader.output_buffer_size()];
         // Read the next frame. An APNG might contain multiple frames.
-        let info = reader.next_frame(&mut buf).unwrap();
+        let info = reader.next_frame(&mut buf)?;
 
         // Grab the bytes of the image.
         let input_bytes = &buf[..info.buffer_size()];
 
-        PNGImage {
+        Ok(PNGImage {
             data: input_bytes.to_vec(),
             color_type: info.color_type,
             bit_depth: info.bit_depth,
             width: info.width,
             height: info.height,
-        }
+        })
     }
 
     pub fn flip(&self, flip_x: bool, flip_y: bool) -> PNGImage {
@@ -91,96 +94,111 @@ impl PNGImage {
         }
     }
 
-    pub fn as_ci8(&self) -> Vec<u8> {
-        assert_eq!(self.bit_depth, BitDepth::Eight);
-        assert_eq!(self.color_type, ColorType::Indexed);
-        self.data.to_vec()
-    }
-
-    pub fn as_ci4(&self) -> Vec<u8> {
-        assert_eq!(self.color_type, ColorType::Indexed);
-
-        match self.bit_depth {
-            BitDepth::Four => self.data.to_vec(),
-            BitDepth::Eight => self
-                .data
-                .chunks_exact(2)
-                .map(|chunk| chunk[0] << 4 | chunk[1])
-                .collect(),
-            _ => panic!("unsupported bit depth: {:?}", self.bit_depth),
+    pub fn as_native<W: Write>(&self, writer: &mut W, image_type: ImageType) -> Result<()> {
+        match image_type {
+            ImageType::I4 => self.as_i4(writer),
+            ImageType::I8 => self.as_i8(writer),
+            ImageType::Ia4 => self.as_ia4(writer),
+            ImageType::Ia8 => self.as_ia8(writer),
+            ImageType::Ia16 => self.as_ia16(writer),
+            ImageType::Ci4 => self.as_ci4(writer),
+            ImageType::Ci8 => self.as_ci8(writer),
+            ImageType::Rgba32 => self.as_rgba32(writer),
+            ImageType::Rgba16 => self.as_rgba16(writer),
         }
     }
 
-    pub fn as_i4(&self) -> Vec<u8> {
+    pub fn as_ci8<W: Write>(&self, writer: &mut W) -> Result<()> {
+        assert_eq!(self.bit_depth, BitDepth::Eight);
+        assert_eq!(self.color_type, ColorType::Indexed);
+        writer.write_all(&self.data)?;
+
+        Ok(())
+    }
+
+    pub fn as_ci4<W: Write>(&self, writer: &mut W) -> Result<()> {
+        assert_eq!(self.color_type, ColorType::Indexed);
+
+        match self.bit_depth {
+            BitDepth::Four => writer.write_all(&self.data)?,
+            BitDepth::Eight => self
+                .data
+                .chunks_exact(2)
+                .for_each(|chunk| writer.write_u8(chunk[0] << 4 | chunk[1]).unwrap()),
+            _ => panic!("unsupported bit depth: {:?}", self.bit_depth),
+        }
+
+        Ok(())
+    }
+
+    pub fn as_i4<W: Write>(&self, writer: &mut W) -> Result<()> {
         match (self.color_type, self.bit_depth) {
-            (ColorType::Grayscale, BitDepth::Four) => self.data.to_vec(),
+            (ColorType::Grayscale, BitDepth::Four) => writer.write_all(&self.data)?,
             (ColorType::Grayscale, BitDepth::Eight) => self
                 .data
                 .chunks_exact(2)
-                .map(|chunk| u8_to_u4(chunk[0]) << 4 | u8_to_u4(chunk[1]))
-                .collect(),
+                .for_each(|chunk| writer.write_u8(chunk[0] << 4 | u8_to_u4(chunk[1])).unwrap()),
             (ColorType::Rgba, BitDepth::Eight) => self
                 .data
                 .chunks_exact(8)
-                .map(|chunk| {
+                .for_each(|chunk| {
                     let c1 = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
                     let i1 = c1.rgb_to_intensity();
                     let c2 = Color::RGBA(chunk[4], chunk[5], chunk[6], chunk[7]);
                     let i2 = c2.rgb_to_intensity();
 
-                    u8_to_u4(i1) << 4 | u8_to_u4(i2)
-                })
-                .collect(),
+                    writer.write_u8(u8_to_u4(i1) << 4 | u8_to_u4(i2)).unwrap();
+                }),
             (ColorType::Rgb, BitDepth::Eight) => self
                 .data
                 .chunks_exact(6)
-                .map(|chunk| {
+                .for_each(|chunk| {
                     let c1 = Color::RGB(chunk[0], chunk[1], chunk[2]);
                     let i1 = c1.rgb_to_intensity();
                     let c2 = Color::RGB(chunk[3], chunk[4], chunk[5]);
                     let i2 = c2.rgb_to_intensity();
 
-                    u8_to_u4(i1) << 4 | u8_to_u4(i2)
-                })
-                .collect(),
+                    writer.write_u8(u8_to_u4(i1) << 4 | u8_to_u4(i2)).unwrap();
+                }),
             p => panic!("unsupported format {:?}", p),
         }
+
+        Ok(())
     }
 
-    pub fn as_i8(&self) -> Vec<u8> {
+    pub fn as_i8<W: Write>(&self, writer: &mut W) -> Result<()> {
         match (self.color_type, self.bit_depth) {
-            (ColorType::Grayscale, BitDepth::Eight) => self.data.to_vec(),
+            (ColorType::Grayscale, BitDepth::Eight) => writer.write_all(&self.data)?,
             (ColorType::Grayscale, BitDepth::Four) => self
                 .data
                 .chunks_exact(2)
-                .map(|chunk| chunk[0] << 4 | chunk[1])
-                .collect(),
+                .for_each(|chunk| writer.write_u8(chunk[0] << 4 | chunk[1]).unwrap()),
             (ColorType::Rgba, BitDepth::Eight) => self
                 .data
                 .chunks_exact(4)
-                .map(|chunk| {
+                .for_each(|chunk| {
                     let c = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
-                    c.rgb_to_intensity()
-                })
-                .collect(),
+                    writer.write_u8(c.rgb_to_intensity()).unwrap();
+                }),
             (ColorType::Rgb, BitDepth::Eight) => self
                 .data
                 .chunks_exact(3)
-                .map(|chunk| {
+                .for_each(|chunk| {
                     let c = Color::RGB(chunk[0], chunk[1], chunk[2]);
-                    c.rgb_to_intensity()
-                })
-                .collect(),
+                    writer.write_u8(c.rgb_to_intensity()).unwrap();
+                }),
             p => panic!("unsupported format {:?}", p),
         }
+
+        Ok(())
     }
 
-    pub fn as_ia4(&self) -> Vec<u8> {
+    pub fn as_ia4<W: Write>(&self, writer: &mut W) -> Result<()> {
         match (self.color_type, self.bit_depth) {
             (ColorType::GrayscaleAlpha, BitDepth::Eight) => self
                 .data
                 .chunks_exact(4)
-                .map(|chunk| {
+                .for_each(|chunk| {
                     let intensity = (chunk[0] >> 5) << 1;
                     let alpha = (chunk[1] > 127) as u8;
                     let high = intensity | alpha;
@@ -189,57 +207,63 @@ impl PNGImage {
                     let alpha = (chunk[3] > 127) as u8;
                     let low = intensity | alpha;
 
-                    high << 4 | (low & 0xF)
-                })
-                .collect(),
+                    writer.write_u8(high << 4 | (low & 0xF)).unwrap();
+                }),
             p => panic!("unsupported format {:?}", p),
         }
+
+        Ok(())
     }
 
-    pub fn as_ia8(&self) -> Vec<u8> {
+    pub fn as_ia8<W: Write>(&self, writer: &mut W) -> Result<()> {
         match (self.color_type, self.bit_depth) {
             (ColorType::GrayscaleAlpha, BitDepth::Eight) => self
                 .data
                 .chunks_exact(2)
-                .map(|chunk| chunk[0] << 4 | (chunk[1] & 0x0F))
-                .collect(),
+                .for_each(|chunk| writer.write_u8(chunk[0] << 4 | (chunk[1] & 0x0F)).unwrap()),
             p => panic!("unsupported format {:?}", p),
         }
+
+        Ok(())
     }
 
-    pub fn as_ia16(&self) -> Vec<u8> {
+    pub fn as_ia16<W: Write>(&self, writer: &mut W) -> Result<()> {
         match (self.color_type, self.bit_depth) {
-            (ColorType::GrayscaleAlpha, BitDepth::Eight) => self.data.to_vec(),
+            (ColorType::GrayscaleAlpha, BitDepth::Eight) => writer.write_all(&self.data)?,
             p => panic!("unsupported format {:?}", p),
         }
+
+        Ok(())
     }
 
-    pub fn as_rgba16(&self) -> Vec<u8> {
+    pub fn as_rgba16<W: Write>(&self, writer: &mut W) -> Result<()> {
         match (self.color_type, self.bit_depth) {
             (ColorType::Rgba, BitDepth::Eight) => self
                 .data
                 .chunks_exact(4)
-                .flat_map(|chunk| {
+                .for_each(|chunk| {
                     let color = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
-                    let (high, low) = color.rgba16();
-                    vec![high, low]
-                })
-                .collect(),
+                    writer.write_u16::<BigEndian>(color.to_u16()).unwrap();
+                }),
             p => panic!("unsupported format {:?}", p),
         }
+
+        Ok(())
     }
 
-    pub fn as_rgba32(&self) -> Vec<u8> {
+    pub fn as_rgba32<W: Write>(&self, writer: &mut W) -> Result<()> {
         match (self.color_type, self.bit_depth) {
-            (ColorType::Rgba, BitDepth::Eight) => self.data.to_vec(),
+            (ColorType::Rgba, BitDepth::Eight) => writer.write_all(&self.data)?,
             p => panic!("unsupported format {:?}", p),
         }
+
+        Ok(())
     }
 }
 
-pub fn create_palette_from_png<R: Read>(r: R) -> Vec<u8> {
+pub fn create_palette_from_png<R: Read, W: Write>(r: R, writer: &mut W) -> Result<()> {
     let decoder = png::Decoder::new(r);
-    let reader = decoder.read_info().unwrap();
+    let reader = decoder.read_info()?;
     let info = reader.info();
     let rgb_data = info.palette.as_ref().expect("given PNG has no palette");
     let alpha_data = info.trns.as_ref();
@@ -248,21 +272,19 @@ pub fn create_palette_from_png<R: Read>(r: R) -> Vec<u8> {
         Some(alpha_data) => rgb_data
             .chunks_exact(3)
             .zip(alpha_data.iter())
-            .flat_map(|(rgb, &alpha)| {
+            .for_each(|(rgb, &alpha)| {
                 let color = Color::RGBA(rgb[0], rgb[1], rgb[2], alpha);
-                let (high, low) = color.rgba16();
-                vec![high, low]
-            })
-            .collect(),
+                writer.write_u16::<BigEndian>(color.to_u16()).unwrap();
+            }),
 
         // If there's no alpha channel, assume everything is opaque
         None => rgb_data
             .chunks_exact(3)
-            .flat_map(|rgb| {
+            .for_each(|rgb| {
                 let color = Color::RGB(rgb[0], rgb[1], rgb[2]);
-                let (high, low) = color.rgba16();
-                vec![high, low]
-            })
-            .collect(),
+                writer.write_u16::<BigEndian>(color.to_u16()).unwrap();
+            }),
     }
+
+    Ok(())
 }

@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 png = "0.17.9"
 clap = { version = "4.1.12", features = ["derive"] }
+anyhow = "1.0.72"
+byteorder = "1.4.3"
