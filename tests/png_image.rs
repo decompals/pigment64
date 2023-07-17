@@ -1,6 +1,6 @@
+use anyhow::Result;
 use pigment64::PNGImage;
 use std::io::Cursor;
-use anyhow::Result;
 
 // TODO: convert input into all permutations of color type and bit depth
 // to test all codepaths
@@ -73,7 +73,7 @@ fn ia8() -> Result<()> {
 
 #[test]
 fn ia16() -> Result<()> {
-    let input_bytes: &[u8]  = include_bytes!("ia16.png");
+    let input_bytes: &[u8] = include_bytes!("ia16.png");
     let image = PNGImage::read(&mut Cursor::new(input_bytes))?;
 
     let expected_bytes = include_bytes!("ia16.png.bin");
@@ -86,7 +86,7 @@ fn ia16() -> Result<()> {
 
 #[test]
 fn rgba16() -> Result<()> {
-    let input_bytes: &[u8]  = include_bytes!("rgba16.png");
+    let input_bytes: &[u8] = include_bytes!("rgba16.png");
     let image = PNGImage::read(&mut Cursor::new(input_bytes))?;
 
     let expected_bytes = include_bytes!("rgba16.png.bin");
@@ -99,7 +99,7 @@ fn rgba16() -> Result<()> {
 
 #[test]
 fn rgba32() -> Result<()> {
-    let input_bytes: &[u8]  = include_bytes!("rgba32.png");
+    let input_bytes: &[u8] = include_bytes!("rgba32.png");
     let image = PNGImage::read(&mut Cursor::new(input_bytes))?;
 
     let expected_bytes = include_bytes!("rgba32.png.bin");

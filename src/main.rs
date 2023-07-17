@@ -1,11 +1,11 @@
+use anyhow::Result;
 use clap::{Parser, ValueEnum};
+use pigment64::ImageType;
 use std::fs::File;
 use std::io::{self, prelude::*};
 use std::io::{BufReader, BufWriter};
 use std::mem;
 use std::path::PathBuf;
-use pigment64::ImageType;
-use anyhow::Result;
 
 /// PNG to N64 image converter
 #[derive(Parser, Debug)]
@@ -156,7 +156,7 @@ fn main() -> Result<()> {
             path
         }));
 
-        let file = File::create(&output_path)?;
+        let file = File::create(output_path)?;
         output_file = Box::from(file);
     }
 

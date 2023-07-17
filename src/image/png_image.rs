@@ -1,10 +1,10 @@
 use crate::color::Color;
 use crate::utils::u8_to_u4;
+use crate::ImageType;
 use anyhow::Result;
+use byteorder::{BigEndian, WriteBytesExt};
 use png::{BitDepth, ColorType};
 use std::io::{Read, Write};
-use byteorder::{BigEndian, WriteBytesExt};
-use crate::ImageType;
 
 pub struct PNGImage {
     data: Vec<u8>,
@@ -138,28 +138,22 @@ impl PNGImage {
                 .data
                 .chunks_exact(2)
                 .for_each(|chunk| writer.write_u8(chunk[0] << 4 | u8_to_u4(chunk[1])).unwrap()),
-            (ColorType::Rgba, BitDepth::Eight) => self
-                .data
-                .chunks_exact(8)
-                .for_each(|chunk| {
-                    let c1 = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
-                    let i1 = c1.rgb_to_intensity();
-                    let c2 = Color::RGBA(chunk[4], chunk[5], chunk[6], chunk[7]);
-                    let i2 = c2.rgb_to_intensity();
+            (ColorType::Rgba, BitDepth::Eight) => self.data.chunks_exact(8).for_each(|chunk| {
+                let c1 = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
+                let i1 = c1.rgb_to_intensity();
+                let c2 = Color::RGBA(chunk[4], chunk[5], chunk[6], chunk[7]);
+                let i2 = c2.rgb_to_intensity();
 
-                    writer.write_u8(u8_to_u4(i1) << 4 | u8_to_u4(i2)).unwrap();
-                }),
-            (ColorType::Rgb, BitDepth::Eight) => self
-                .data
-                .chunks_exact(6)
-                .for_each(|chunk| {
-                    let c1 = Color::RGB(chunk[0], chunk[1], chunk[2]);
-                    let i1 = c1.rgb_to_intensity();
-                    let c2 = Color::RGB(chunk[3], chunk[4], chunk[5]);
-                    let i2 = c2.rgb_to_intensity();
+                writer.write_u8(u8_to_u4(i1) << 4 | u8_to_u4(i2)).unwrap();
+            }),
+            (ColorType::Rgb, BitDepth::Eight) => self.data.chunks_exact(6).for_each(|chunk| {
+                let c1 = Color::RGB(chunk[0], chunk[1], chunk[2]);
+                let i1 = c1.rgb_to_intensity();
+                let c2 = Color::RGB(chunk[3], chunk[4], chunk[5]);
+                let i2 = c2.rgb_to_intensity();
 
-                    writer.write_u8(u8_to_u4(i1) << 4 | u8_to_u4(i2)).unwrap();
-                }),
+                writer.write_u8(u8_to_u4(i1) << 4 | u8_to_u4(i2)).unwrap();
+            }),
             p => panic!("unsupported format {:?}", p),
         }
 
@@ -173,20 +167,14 @@ impl PNGImage {
                 .data
                 .chunks_exact(2)
                 .for_each(|chunk| writer.write_u8(chunk[0] << 4 | chunk[1]).unwrap()),
-            (ColorType::Rgba, BitDepth::Eight) => self
-                .data
-                .chunks_exact(4)
-                .for_each(|chunk| {
-                    let c = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
-                    writer.write_u8(c.rgb_to_intensity()).unwrap();
-                }),
-            (ColorType::Rgb, BitDepth::Eight) => self
-                .data
-                .chunks_exact(3)
-                .for_each(|chunk| {
-                    let c = Color::RGB(chunk[0], chunk[1], chunk[2]);
-                    writer.write_u8(c.rgb_to_intensity()).unwrap();
-                }),
+            (ColorType::Rgba, BitDepth::Eight) => self.data.chunks_exact(4).for_each(|chunk| {
+                let c = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
+                writer.write_u8(c.rgb_to_intensity()).unwrap();
+            }),
+            (ColorType::Rgb, BitDepth::Eight) => self.data.chunks_exact(3).for_each(|chunk| {
+                let c = Color::RGB(chunk[0], chunk[1], chunk[2]);
+                writer.write_u8(c.rgb_to_intensity()).unwrap();
+            }),
             p => panic!("unsupported format {:?}", p),
         }
 
@@ -195,10 +183,8 @@ impl PNGImage {
 
     pub fn as_ia4<W: Write>(&self, writer: &mut W) -> Result<()> {
         match (self.color_type, self.bit_depth) {
-            (ColorType::GrayscaleAlpha, BitDepth::Eight) => self
-                .data
-                .chunks_exact(4)
-                .for_each(|chunk| {
+            (ColorType::GrayscaleAlpha, BitDepth::Eight) => {
+                self.data.chunks_exact(4).for_each(|chunk| {
                     let intensity = (chunk[0] >> 5) << 1;
                     let alpha = (chunk[1] > 127) as u8;
                     let high = intensity | alpha;
@@ -208,7 +194,8 @@ impl PNGImage {
                     let low = intensity | alpha;
 
                     writer.write_u8(high << 4 | (low & 0xF)).unwrap();
-                }),
+                })
+            }
             p => panic!("unsupported format {:?}", p),
         }
 
@@ -238,13 +225,10 @@ impl PNGImage {
 
     pub fn as_rgba16<W: Write>(&self, writer: &mut W) -> Result<()> {
         match (self.color_type, self.bit_depth) {
-            (ColorType::Rgba, BitDepth::Eight) => self
-                .data
-                .chunks_exact(4)
-                .for_each(|chunk| {
-                    let color = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
-                    writer.write_u16::<BigEndian>(color.to_u16()).unwrap();
-                }),
+            (ColorType::Rgba, BitDepth::Eight) => self.data.chunks_exact(4).for_each(|chunk| {
+                let color = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
+                writer.write_u16::<BigEndian>(color.to_u16()).unwrap();
+            }),
             p => panic!("unsupported format {:?}", p),
         }
 
@@ -269,21 +253,21 @@ pub fn create_palette_from_png<R: Read, W: Write>(r: R, writer: &mut W) -> Resul
     let alpha_data = info.trns.as_ref();
 
     match alpha_data {
-        Some(alpha_data) => rgb_data
-            .chunks_exact(3)
-            .zip(alpha_data.iter())
-            .for_each(|(rgb, &alpha)| {
-                let color = Color::RGBA(rgb[0], rgb[1], rgb[2], alpha);
-                writer.write_u16::<BigEndian>(color.to_u16()).unwrap();
-            }),
+        Some(alpha_data) => {
+            rgb_data
+                .chunks_exact(3)
+                .zip(alpha_data.iter())
+                .for_each(|(rgb, &alpha)| {
+                    let color = Color::RGBA(rgb[0], rgb[1], rgb[2], alpha);
+                    writer.write_u16::<BigEndian>(color.to_u16()).unwrap();
+                })
+        }
 
         // If there's no alpha channel, assume everything is opaque
-        None => rgb_data
-            .chunks_exact(3)
-            .for_each(|rgb| {
-                let color = Color::RGB(rgb[0], rgb[1], rgb[2]);
-                writer.write_u16::<BigEndian>(color.to_u16()).unwrap();
-            }),
+        None => rgb_data.chunks_exact(3).for_each(|rgb| {
+            let color = Color::RGB(rgb[0], rgb[1], rgb[2]);
+            writer.write_u16::<BigEndian>(color.to_u16()).unwrap();
+        }),
     }
 
     Ok(())
