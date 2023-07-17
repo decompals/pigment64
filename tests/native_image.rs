@@ -4,7 +4,7 @@ use pigment64::{ImageType, NativeImage};
 const DEBUG: bool = false;
 
 fn _write_generated_image(data: &[u8], name: &str) -> Result<()> {
-    if DEBUG == false {
+    if !DEBUG {
         return Ok(());
     }
 
