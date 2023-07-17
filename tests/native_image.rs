@@ -3,19 +3,6 @@ use pigment64::{ImageType, NativeImage, PNGImage};
 
 const DEBUG: bool = false;
 
-fn _write_generated_image(data: &[u8], name: &str) -> Result<()> {
-    if !DEBUG {
-        return Ok(());
-    }
-
-    use std::fs::File;
-    use std::io::Write;
-    let mut file = File::create(name)?;
-    file.write_all(data)?;
-
-    Ok(())
-}
-
 #[test]
 fn i8() -> Result<()> {
     let original_bytes: &[u8] = include_bytes!("i8.png.bin");
@@ -23,9 +10,6 @@ fn i8() -> Result<()> {
 
     let mut output: Vec<u8> = Vec::new();
     image.as_png(&mut output, None)?;
-
-    // write png to file for debugging
-    _write_generated_image(&output, "i8.result.png")?;
 
     // convert the png back to a native image
     let image = PNGImage::read(output.as_slice())?;
@@ -44,9 +28,6 @@ fn ia8() -> Result<()> {
     let mut output: Vec<u8> = Vec::new();
     image.as_png(&mut output, None)?;
 
-    // write png to file for debugging
-    _write_generated_image(&output, "ia8.result.png")?;
-
     // convert the png back to a native image
     let image = PNGImage::read(output.as_slice())?;
     let mut output_bytes: Vec<u8> = Vec::new();
@@ -63,9 +44,6 @@ fn ia16() -> Result<()> {
 
     let mut output: Vec<u8> = Vec::new();
     image.as_png(&mut output, None)?;
-
-    // write png to file for debugging
-    _write_generated_image(&output, "ia16.result.png")?;
 
     // convert the png back to a native image
     let image = PNGImage::read(output.as_slice())?;
@@ -84,9 +62,6 @@ fn rgba16() -> Result<()> {
     let mut output: Vec<u8> = Vec::new();
     image.as_png(&mut output, None)?;
 
-    // write png to file for debugging
-    _write_generated_image(&output, "rgba16.result.png")?;
-
     // convert the png back to a native image
     let image = PNGImage::read(output.as_slice())?;
     let mut output_bytes: Vec<u8> = Vec::new();
@@ -103,9 +78,6 @@ fn rgba32() -> Result<()> {
 
     let mut output: Vec<u8> = Vec::new();
     image.as_png(&mut output, None)?;
-
-    // write png to file for debugging
-    _write_generated_image(&output, "rgba32.result.png")?;
 
     // convert the png back to a native image
     let image = PNGImage::read(output.as_slice())?;
