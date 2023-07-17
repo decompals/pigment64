@@ -1,5 +1,5 @@
 use anyhow::Result;
-use pigment64::PNGImage;
+use pigment64::{create_palette_from_png, PNGImage};
 use std::io::Cursor;
 
 // TODO: convert input into all permutations of color type and bit depth
@@ -15,15 +15,18 @@ use std::io::Cursor;
 //     Ok(())
 // }
 
-// #[test]
-// fn ci4() -> Result<()> {
-//     let input_bytes = include_bytes!("ci4.png");
-//     let image = Image::read_png(&mut Cursor::new(input_bytes));
+#[test]
+fn ci4() -> Result<()> {
+    let input_bytes: &[u8] = include_bytes!("ci4.png");
+    let image = PNGImage::read(input_bytes)?;
 
-//     let expected_bytes = include_bytes!("ci4.png.bin");
-//     assert_eq!(image.as_ci4(), expected_bytes);
-//     Ok(())
-// }
+    let expected_bytes = include_bytes!("ci4.data.bin");
+    let mut output: Vec<u8> = Vec::new();
+    image.as_ci4(&mut output)?;
+
+    assert_eq!(output, expected_bytes);
+    Ok(())
+}
 
 #[test]
 fn i4() -> Result<()> {
@@ -116,12 +119,13 @@ fn rgba32() -> Result<()> {
     Ok(())
 }
 
-// #[test]
-// fn palette() -> Result<()> {
-//     let input_bytes = include_bytes!("ci8.png");
-//     let palette = get_palette_rgba16(&mut Cursor::new(input_bytes));
+#[test]
+fn palette() -> Result<()> {
+    let input_bytes: &[u8] = include_bytes!("ci4.png");
+    let mut output_tlut: Vec<u8> = Vec::new();
+    create_palette_from_png(input_bytes, &mut output_tlut)?;
 
-//     let expected_bytes = include_bytes!("ci8.pal.bin");
-//     assert_eq!(palette, expected_bytes);
-//     Ok(())
-// }
+    let expected_bytes = include_bytes!("ci4.tlut.bin");
+    assert_eq!(output_tlut, expected_bytes);
+    Ok(())
+}

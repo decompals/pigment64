@@ -1,7 +1,7 @@
 use crate::color::Color;
 use crate::{ImageSize, ImageType, TextureLUT};
 use anyhow::Result;
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{BigEndian, ReadBytesExt};
 use std::io::{Cursor, Read, Write};
 
 pub struct NativeImage {
@@ -102,10 +102,10 @@ impl NativeImage {
                         let byte = cursor.read_u8()?;
 
                         let index = (byte >> 4) & 0x0F;
-                        writer.write_all(&get_tlut_color(tlut_color_table, index))?;
+                        writer.write_all(&get_tlut_color_at_index(tlut_color_table, index))?;
 
                         let index = byte & 0x0F;
-                        writer.write_all(&get_tlut_color(tlut_color_table, index))?;
+                        writer.write_all(&get_tlut_color_at_index(tlut_color_table, index))?;
                     }
                 }
             }
@@ -115,7 +115,7 @@ impl NativeImage {
                 for _y in 0..self.height {
                     for _x in 0..self.width {
                         let index = cursor.read_u8()?;
-                        writer.write_all(&get_tlut_color(tlut_color_table, index))?;
+                        writer.write_all(&get_tlut_color_at_index(tlut_color_table, index))?;
                     }
                 }
             }
@@ -165,19 +165,24 @@ impl NativeImage {
             }
             ImageType::Ci4 => {
                 assert!(tlut_color_table.is_some());
+                let mut cursor = Cursor::new(&self.data);
                 let mut data: Vec<u8> = vec![];
-                let mut cursor = Cursor::new(&mut data);
 
                 for _y in 0..self.height {
                     for _x in (0..self.width).step_by(2) {
                         let byte = cursor.read_u8()?;
-                        cursor.write_u8(byte)?;
+                        data.push(byte);
                     }
                 }
 
-                encoder.set_palette(tlut_color_table.unwrap());
                 encoder.set_color(png::ColorType::Indexed);
                 encoder.set_depth(png::BitDepth::Four);
+
+                let (palette_data, trans_data) =
+                    split_color_table_for_png(tlut_color_table.unwrap());
+
+                encoder.set_palette(palette_data);
+                encoder.set_trns(trans_data);
 
                 let mut writer = encoder.write_header()?;
                 writer.write_image_data(&data)?;
@@ -186,19 +191,24 @@ impl NativeImage {
             }
             ImageType::Ci8 => {
                 assert!(tlut_color_table.is_some());
+                let mut cursor = Cursor::new(&self.data);
                 let mut data: Vec<u8> = vec![];
-                let mut cursor = Cursor::new(&mut data);
 
                 for _y in 0..self.height {
                     for _x in 0..self.width {
                         let index = cursor.read_u8()?;
-                        cursor.write_u8(index)?;
+                        data.push(index);
                     }
                 }
 
-                encoder.set_palette(tlut_color_table.unwrap());
                 encoder.set_color(png::ColorType::Indexed);
                 encoder.set_depth(png::BitDepth::Eight);
+
+                let (palette_data, trans_data) =
+                    split_color_table_for_png(tlut_color_table.unwrap());
+
+                encoder.set_palette(palette_data);
+                encoder.set_trns(trans_data);
 
                 let mut writer = encoder.write_header()?;
                 writer.write_image_data(&data)?;
@@ -224,36 +234,48 @@ impl NativeImage {
 }
 
 /// Parses a tlut into a RGBA32 color table
-pub fn parse_tlut<W: Write>(
-    cursor: &mut Cursor<&[u8]>,
-    writer: &mut W,
-    size: ImageSize,
-    mode: TextureLUT,
-) -> Result<()> {
+pub fn parse_tlut(bytes: &[u8], size: ImageSize, mode: TextureLUT) -> Result<Vec<u8>> {
     assert_eq!(
         mode,
         TextureLUT::Rgba16,
         "Only RGBA16 TLUTs are supported at the moment"
     );
 
+    let mut output: Vec<u8> = vec![];
+    let cursor = &mut Cursor::new(bytes);
     for _i in 0..(size.get_tlut_size()) {
         let pixel = cursor.read_u16::<BigEndian>()?;
         let color = Color::from_u16(pixel);
-        writer.write_all(&color.rgba16())?;
+        output.write_all(&[color.r, color.g, color.b, color.a])?;
     }
 
-    Ok(())
+    Ok(output)
 }
 
 /// Reads an rgba color from a buffer starting at the given offset
-fn get_tlut_color(tlut_color_table: Option<&[u8]>, index: u8) -> [u8; 4] {
+fn get_tlut_color_at_index(tlut_color_table: Option<&[u8]>, index: u8) -> [u8; 4] {
+    assert!(tlut_color_table.is_some());
+
     if let Some(tlut_color_table) = tlut_color_table {
         let r = tlut_color_table[(index * 4) as usize];
         let g = tlut_color_table[((index * 4) + 1) as usize];
         let b = tlut_color_table[((index * 4) + 2) as usize];
         let a = tlut_color_table[((index * 4) + 3) as usize];
-        [r, g, b, a]
-    } else {
-        [index, index, index, 0xFF]
+
+        return [r, g, b, a];
     }
+
+    unreachable!()
+}
+
+/// Splits a color table into a palette and a transparency table for png encoding
+fn split_color_table_for_png(table: &[u8]) -> (Vec<u8>, Vec<u8>) {
+    let palette_data: Vec<u8> = table
+        .chunks(4)
+        .flat_map(|chunk| chunk[..3].to_vec())
+        .collect();
+
+    let trans_data: Vec<u8> = table.chunks(4).map(|chunk| chunk[3]).collect();
+
+    (palette_data, trans_data)
 }

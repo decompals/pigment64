@@ -1,5 +1,31 @@
 use anyhow::Result;
-use pigment64::{ImageType, NativeImage, PNGImage};
+use pigment64::image::native_image::parse_tlut;
+use pigment64::{create_palette_from_png, ImageSize, ImageType, NativeImage, PNGImage, TextureLUT};
+
+#[test]
+fn ci4() -> Result<()> {
+    let original_bytes: &[u8] = include_bytes!("ci4.data.bin");
+    let image = NativeImage::read(original_bytes, ImageType::Ci4, 4, 4)?;
+
+    let tlut_bytes: &[u8] = include_bytes!("ci4.tlut.bin");
+    let tlut_table: Vec<u8> = parse_tlut(tlut_bytes, ImageSize::Bits4, TextureLUT::Rgba16)?;
+
+    let mut output: Vec<u8> = Vec::new();
+    image.as_png(&mut output, Some(tlut_table.as_slice()))?;
+
+    // convert the png back to a native image
+    let image = PNGImage::read(output.as_slice())?;
+    let mut output_bytes: Vec<u8> = Vec::new();
+    image.as_ci4(&mut output_bytes)?;
+
+    // convert the png back to a texture lut
+    let mut output_tlut: Vec<u8> = Vec::new();
+    create_palette_from_png(output.as_slice(), &mut output_tlut)?;
+
+    assert_eq!(output_bytes, original_bytes);
+    assert_eq!(output_tlut, tlut_bytes);
+    Ok(())
+}
 
 #[test]
 fn i4() -> Result<()> {
