@@ -19,7 +19,7 @@ enum Commands {
         args: cli::png::PngArgs,
     },
     /// Converts a PNG to a binary image
-    ToBinary {
+    ToBin {
         #[clap(flatten)]
         args: cli::binary::BinaryArgs,
     },
@@ -32,7 +32,7 @@ fn main() -> Result<()> {
         Commands::ToPng { args } => {
             cli::png::handle_png(args)?;
         }
-        Commands::ToBinary { args } => {
+        Commands::ToBin { args } => {
             cli::binary::handle_binary(args)?;
         }
     }

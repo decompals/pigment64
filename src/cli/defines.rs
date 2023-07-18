@@ -44,7 +44,7 @@ impl BinaryFormat {
             BinaryFormat::Ia16 => ImageType::Ia16,
             BinaryFormat::Rgba16 => ImageType::Rgba16,
             BinaryFormat::Rgba32 => ImageType::Rgba32,
-            _ => panic!("cannot convert palette to native format"),
+            BinaryFormat::Palette => panic!("cannot convert palette to native format"),
         }
     }
 
@@ -59,7 +59,7 @@ impl BinaryFormat {
             BinaryFormat::Ia16 => ImageSize::Bits16,
             BinaryFormat::Rgba16 => ImageSize::Bits16,
             BinaryFormat::Rgba32 => ImageSize::Bits32,
-            _ => panic!("cannot convert palette to native format"),
+            BinaryFormat::Palette => panic!("cannot convert palette to native format"),
         }
     }
 }
