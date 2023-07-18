@@ -1,4 +1,6 @@
+use anyhow::Result;
 use clap::{Parser, ValueEnum};
+use pigment64::ImageType;
 use std::fs::File;
 use std::io::{self, prelude::*};
 use std::io::{BufReader, BufWriter};
@@ -18,7 +20,7 @@ struct Args {
 
     /// Output format
     #[arg(value_enum)]
-    format: Format,
+    format: OutputFormat,
 
     /// Flip the image on the x axis
     #[arg(long)]
@@ -28,19 +30,17 @@ struct Args {
     #[arg(long)]
     flip_y: bool,
 
-    /// Output a raw C array which can be `#include`d in a file. The default output type width matches the FORMAT provided, but it can be overridden with --type-width
+    /// Output a raw C array which can be `#include`d in a file. The default output type width matches the FORMAT provided, but it can be overridden with --c_array_width
     #[arg(short, long)]
     c_array: bool,
 
     /// Overrides the natural fit of each format when outputting a C array
     #[arg(short, long, value_enum)]
-    type_width: Option<TypeWidthArray>,
+    c_array_width: Option<CArrayWidth>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
-enum Format {
-    Ci4,
-    Ci8,
+enum OutputFormat {
     I4,
     I8,
     Ia4,
@@ -51,29 +51,40 @@ enum Format {
     Palette,
 }
 
+impl OutputFormat {
+    fn get_width(&self) -> CArrayWidth {
+        match self {
+            OutputFormat::I4 => CArrayWidth::U8,
+            OutputFormat::I8 => CArrayWidth::U8,
+            OutputFormat::Ia4 => CArrayWidth::U8,
+            OutputFormat::Ia8 => CArrayWidth::U8,
+            OutputFormat::Ia16 => CArrayWidth::U16,
+            OutputFormat::Rgba16 => CArrayWidth::U16,
+            OutputFormat::Rgba32 => CArrayWidth::U32,
+            OutputFormat::Palette => CArrayWidth::U16,
+        }
+    }
+
+    fn as_native(&self) -> ImageType {
+        match self {
+            OutputFormat::I4 => ImageType::I4,
+            OutputFormat::I8 => ImageType::I8,
+            OutputFormat::Ia4 => ImageType::Ia4,
+            OutputFormat::Ia8 => ImageType::Ia8,
+            OutputFormat::Ia16 => ImageType::Ia16,
+            OutputFormat::Rgba16 => ImageType::Rgba16,
+            OutputFormat::Rgba32 => ImageType::Rgba32,
+            _ => panic!("cannot convert palette to native format"),
+        }
+    }
+}
+
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
-enum TypeWidthArray {
+enum CArrayWidth {
     U8,
     U16,
     U32,
     U64,
-}
-
-impl Format {
-    fn get_width(&self) -> TypeWidthArray {
-        match self {
-            Format::Ci4 => TypeWidthArray::U8,
-            Format::Ci8 => TypeWidthArray::U8,
-            Format::I4 => TypeWidthArray::U8,
-            Format::I8 => TypeWidthArray::U8,
-            Format::Ia4 => TypeWidthArray::U8,
-            Format::Ia8 => TypeWidthArray::U8,
-            Format::Ia16 => TypeWidthArray::U16,
-            Format::Rgba16 => TypeWidthArray::U16,
-            Format::Rgba32 => TypeWidthArray::U32,
-            Format::Palette => TypeWidthArray::U16,
-        }
-    }
 }
 
 #[macro_export]
@@ -110,34 +121,24 @@ fn write_buf_as_u64(output_file: &mut Box<dyn Write>, bin: &[u8]) {
     write_buf_as_raw_array!(output_file, bin, u64);
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args = Args::parse();
 
     let input_file = File::open(&args.input).expect("could not open input file");
     let mut input_reader = BufReader::new(input_file);
 
     // Convert the image
-    let bin = if let Format::Palette = args.format {
-        pigment64::get_palette_rgba16(&mut input_reader)
+    let mut bin: Vec<u8> = Vec::new();
+    if let OutputFormat::Palette = args.format {
+        pigment64::create_palette_from_png(&mut input_reader, &mut bin)?;
     } else {
-        let mut image = pigment64::Image::read_png(&mut input_reader);
+        let mut image = pigment64::PNGImage::read(&mut input_reader)?;
 
         if args.flip_x || args.flip_y {
             image = image.flip(args.flip_x, args.flip_y);
         }
 
-        match args.format {
-            Format::Ci4 => image.as_ci4(),
-            Format::Ci8 => image.as_ci8(),
-            Format::I4 => image.as_i4(),
-            Format::I8 => image.as_i8(),
-            Format::Ia4 => image.as_ia4(),
-            Format::Ia8 => image.as_ia8(),
-            Format::Ia16 => image.as_ia16(),
-            Format::Rgba16 => image.as_rgba16(),
-            Format::Rgba32 => image.as_rgba32(),
-            Format::Palette => unreachable!(),
-        }
+        image.as_native(&mut bin, args.format.as_native())?;
     };
 
     let mut output_file: Box<dyn Write>;
@@ -155,24 +156,25 @@ fn main() {
             path
         }));
 
-        output_file = Box::from(File::create(output_path).unwrap());
+        let file = File::create(output_path)?;
+        output_file = Box::from(file);
     }
 
     if args.c_array {
-        let mut type_width = args.format.get_width();
+        let mut c_array_width = args.format.get_width();
 
         // Override if the user passed the appropriate flag
-        type_width = args.type_width.unwrap_or(type_width);
+        c_array_width = args.c_array_width.unwrap_or(c_array_width);
 
-        match type_width {
-            TypeWidthArray::U8 => write_buf_as_u8(&mut output_file, &bin),
-            TypeWidthArray::U16 => write_buf_as_u16(&mut output_file, &bin),
-            TypeWidthArray::U32 => write_buf_as_u32(&mut output_file, &bin),
-            TypeWidthArray::U64 => write_buf_as_u64(&mut output_file, &bin),
+        match c_array_width {
+            CArrayWidth::U8 => write_buf_as_u8(&mut output_file, &bin),
+            CArrayWidth::U16 => write_buf_as_u16(&mut output_file, &bin),
+            CArrayWidth::U32 => write_buf_as_u32(&mut output_file, &bin),
+            CArrayWidth::U64 => write_buf_as_u64(&mut output_file, &bin),
         }
     } else {
-        BufWriter::new(output_file)
-            .write_all(&bin)
-            .expect("could not write to output file");
+        BufWriter::new(output_file).write_all(&bin)?;
     }
+
+    Ok(())
 }
