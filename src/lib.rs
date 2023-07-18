@@ -1,21 +1,38 @@
+use num_enum::TryFromPrimitive;
+
 pub mod color;
 
 pub mod image;
+pub use image::native_image::NativeImage;
 pub use image::png_image::create_palette_from_png;
 pub use image::png_image::PNGImage;
 
 mod utils;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]
+#[repr(u8)]
 pub enum ImageSize {
-    Bits4,
+    Bits4 = 0,
     Bits8 = 1,
     Bits16 = 2,
     Bits32 = 3,
     DD = 5,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+impl ImageSize {
+    pub fn get_tlut_size(&self) -> usize {
+        match self {
+            ImageSize::Bits4 => 0x10,
+            ImageSize::Bits8 => 0x100,
+            ImageSize::Bits16 => 0x1000,
+            ImageSize::Bits32 => 0x10000,
+            _ => panic!("Invalid size: {:?}", self),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]
+#[repr(u8)]
 pub enum ImageFormat {
     Rgba = 0,
     Yuv = 1,
@@ -24,7 +41,8 @@ pub enum ImageFormat {
     I = 4,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]
+#[repr(u8)]
 pub enum ImageType {
     I4,
     I8,
@@ -65,4 +83,12 @@ impl ImageType {
             ImageType::Rgba32 => ImageFormat::Rgba,
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, TryFromPrimitive)]
+#[repr(u8)]
+pub enum TextureLUT {
+    None = 0,
+    Rgba16 = 2,
+    Ia16 = 3,
 }

@@ -58,17 +58,17 @@ fn test_color_rba16() {
     // Test case 1: Color value with maximum component values
     let color = Color::WHITE;
     let pixel = color.rgba16();
-    assert_eq!(pixel, (0xFF, 0xFF));
+    assert_eq!(pixel, [0xFF, 0xFF]);
 
     // Test case 2: Color value with minimum component values
     let color = Color::BLACK;
     let pixel = color.rgba16();
-    assert_eq!(pixel, (0, 1));
+    assert_eq!(pixel, [0, 1]);
 
     // Test case 3: Random color values
     let color = Color::RGBA(120, 200, 50, 150);
     let pixel = color.rgba16();
-    assert_eq!(pixel, (126, 76));
+    assert_eq!(pixel, [126, 76]);
 }
 
 #[test]

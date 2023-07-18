@@ -196,6 +196,19 @@ impl PNGImage {
                     writer.write_u8(high << 4 | (low & 0xF)).unwrap();
                 })
             }
+            (ColorType::Rgba, BitDepth::Eight) => self.data.chunks_exact(8).for_each(|chunk| {
+                let c1 = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
+                let intensity1 = (c1.rgb_to_intensity() >> 5) << 1;
+                let alpha1 = (c1.a > 127) as u8;
+
+                let c2 = Color::RGBA(chunk[4], chunk[5], chunk[6], chunk[7]);
+                let intensity2 = (c2.rgb_to_intensity() >> 5) << 1;
+                let alpha2 = (c2.a > 127) as u8;
+
+                let high = intensity1 | alpha1;
+                let low = intensity2 | alpha2;
+                writer.write_u8(high << 4 | (low & 0xF)).unwrap();
+            }),
             p => panic!("unsupported format {:?}", p),
         }
 
@@ -208,6 +221,13 @@ impl PNGImage {
                 .data
                 .chunks_exact(2)
                 .for_each(|chunk| writer.write_u8(chunk[0] << 4 | (chunk[1] & 0x0F)).unwrap()),
+            (ColorType::Rgba, BitDepth::Eight) => self.data.chunks_exact(4).for_each(|chunk| {
+                let c = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
+                let i = (c.rgb_to_intensity() >> 4) & 0xF;
+                let a = (c.a >> 4) & 0xF;
+
+                writer.write_u8(i << 4 | a).unwrap();
+            }),
             p => panic!("unsupported format {:?}", p),
         }
 
@@ -217,6 +237,14 @@ impl PNGImage {
     pub fn as_ia16<W: Write>(&self, writer: &mut W) -> Result<()> {
         match (self.color_type, self.bit_depth) {
             (ColorType::GrayscaleAlpha, BitDepth::Eight) => writer.write_all(&self.data)?,
+            (ColorType::Rgba, BitDepth::Eight) => self.data.chunks_exact(4).for_each(|chunk| {
+                let c = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
+                let i = c.rgb_to_intensity();
+                let a = c.a;
+
+                writer.write_u8(i).unwrap();
+                writer.write_u8(a).unwrap();
+            }),
             p => panic!("unsupported format {:?}", p),
         }
 
