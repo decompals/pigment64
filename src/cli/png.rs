@@ -33,6 +33,14 @@ pub struct PngArgs {
     /// Path to the palette binary file (only required for CI formats)
     #[arg(short, long)]
     palette: Option<String>,
+
+    /// Flip the image on the x axis
+    #[arg(long)]
+    flip_x: bool,
+
+    /// Flip the image on the y axis
+    #[arg(long)]
+    flip_y: bool,
 }
 
 // MARK: - Handlers
@@ -71,6 +79,14 @@ pub fn handle_png(args: &PngArgs) -> Result<()> {
         image.as_png(&mut output, Some(&palette))?;
     } else {
         image.as_png(&mut output, None)?;
+    }
+
+    // Handle flips, we do this on the already produced PNG because it's easier
+    if args.flip_x || args.flip_y {
+        let mut image = pigment64::PNGImage::read(&mut output.as_slice())?;
+        image = image.flip(args.flip_x, args.flip_y);
+        output.clear();
+        image.as_png(&mut output)?;
     }
 
     // Write the file
