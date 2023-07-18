@@ -41,6 +41,8 @@ struct Args {
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
 enum OutputFormat {
+    Ci4,
+    Ci8,
     I4,
     I8,
     Ia4,
@@ -54,6 +56,8 @@ enum OutputFormat {
 impl OutputFormat {
     fn get_width(&self) -> CArrayWidth {
         match self {
+            OutputFormat::Ci4 => CArrayWidth::U8,
+            OutputFormat::Ci8 => CArrayWidth::U8,
             OutputFormat::I4 => CArrayWidth::U8,
             OutputFormat::I8 => CArrayWidth::U8,
             OutputFormat::Ia4 => CArrayWidth::U8,
@@ -67,6 +71,8 @@ impl OutputFormat {
 
     fn as_native(&self) -> ImageType {
         match self {
+            OutputFormat::Ci4 => ImageType::Ci4,
+            OutputFormat::Ci8 => ImageType::Ci8,
             OutputFormat::I4 => ImageType::I4,
             OutputFormat::I8 => ImageType::I8,
             OutputFormat::Ia4 => ImageType::Ia4,
