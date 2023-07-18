@@ -195,7 +195,7 @@ impl PNGImage {
 
                     writer.write_u8(high << 4 | (low & 0xF)).unwrap();
                 })
-            },
+            }
             (ColorType::Rgba, BitDepth::Eight) => self.data.chunks_exact(8).for_each(|chunk| {
                 let c1 = Color::RGBA(chunk[0], chunk[1], chunk[2], chunk[3]);
                 let intensity1 = (c1.rgb_to_intensity() >> 5) << 1;
