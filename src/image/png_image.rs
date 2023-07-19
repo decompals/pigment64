@@ -94,6 +94,17 @@ impl PNGImage {
         }
     }
 
+    /// Writes the image as a PNG to the given writer.
+    /// This is useful for when you need to flip an existing image.
+    pub fn as_png<W: Write>(&self, writer: &mut W) -> Result<()> {
+        let mut encoder = png::Encoder::new(writer, self.width, self.height);
+        encoder.set_color(self.color_type);
+        encoder.set_depth(self.bit_depth);
+        let mut writer = encoder.write_header()?;
+        writer.write_image_data(&self.data)?;
+        Ok(())
+    }
+
     pub fn as_native<W: Write>(&self, writer: &mut W, image_type: ImageType) -> Result<()> {
         match image_type {
             ImageType::I4 => self.as_i4(writer),
