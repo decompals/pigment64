@@ -1,6 +1,7 @@
 on:
     release:
       types: [created]
+    workflow_run:
 jobs:
     release:
       name: release ${{ matrix.target }}
@@ -15,6 +16,8 @@ jobs:
               archive: tar.gz
             - target: x86_64-apple-darwin
               archive: zip
+            - target: i686-unknown-linux-musl
+              archive: tar.gz
       steps:
         - uses: actions/checkout@master
         - name: Compile and release
