@@ -107,6 +107,7 @@ impl PNGImage {
 
     pub fn as_native<W: Write>(&self, writer: &mut W, image_type: ImageType) -> Result<()> {
         match image_type {
+            ImageType::I1 => self.as_i1(writer),
             ImageType::I4 => self.as_i4(writer),
             ImageType::I8 => self.as_i8(writer),
             ImageType::Ia4 => self.as_ia4(writer),
@@ -140,6 +141,25 @@ impl PNGImage {
         }
 
         Ok(())
+    }
+
+    pub fn as_i1<W: Write>(&self, writer: &mut W) -> Result<()> {
+        if let (ColorType::Grayscale, BitDepth::One) = (self.color_type, self.bit_depth) {
+            writer.write_all(&self.data).map_err(Into::into)
+        } else {
+            let mut i8_data = vec![0; self.data.len() * 8];
+            self.as_i8(&mut i8_data.as_mut_slice())?;
+
+            for chunk in i8_data.chunks_exact(8) {
+                let mut byte = 0;
+                for (i, pixel) in chunk.iter().copied().enumerate() {
+                    byte |= ((pixel > 127) as u8) << (7 - i);
+                }
+                writer.write_u8(byte)?;
+            }
+
+            Ok(())
+        }
     }
 
     pub fn as_i4<W: Write>(&self, writer: &mut W) -> Result<()> {

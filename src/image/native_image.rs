@@ -34,6 +34,19 @@ impl NativeImage {
         let mut cursor = Cursor::new(&self.data);
 
         match self.format {
+            ImageType::I1 => {
+                for _y in 0..self.height {
+                    for _x in (0..self.width).step_by(8) {
+                        let byte = cursor.read_u8()?;
+
+                        for i in 0..8 {
+                            let mask = 0b00000001 << (7 - i);
+                            let intensity = if byte & mask == 0 { 0 } else { 255 };
+                            writer.write_all(&[intensity, intensity, intensity, 0xFF])?;
+                        }
+                    }
+                }
+            }
             ImageType::I4 => {
                 for _y in 0..self.height {
                     for _x in (0..self.width).step_by(2) {
@@ -149,19 +162,12 @@ impl NativeImage {
         let mut encoder = png::Encoder::new(writer, self.width, self.height);
 
         match self.format {
-            ImageType::I4 => {
-                self.decode(&mut data, None)?;
-            }
-            ImageType::I8 => {
-                self.decode(&mut data, None)?;
-            }
-            ImageType::Ia4 => {
-                self.decode(&mut data, None)?;
-            }
-            ImageType::Ia8 => {
-                self.decode(&mut data, None)?;
-            }
-            ImageType::Ia16 => {
+            ImageType::I1
+            | ImageType::I4
+            | ImageType::I8
+            | ImageType::Ia4
+            | ImageType::Ia8
+            | ImageType::Ia16 => {
                 self.decode(&mut data, None)?;
             }
             ImageType::Ci4 => {
