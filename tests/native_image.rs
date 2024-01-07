@@ -28,6 +28,23 @@ fn ci4() -> Result<()> {
 }
 
 #[test]
+fn i1() -> Result<()> {
+    let original_bytes: &[u8] = include_bytes!("i1.png.bin");
+    let image = NativeImage::read(original_bytes, ImageType::I1, 32, 63)?;
+
+    let mut output: Vec<u8> = Vec::new();
+    image.as_png(&mut output, None)?;
+
+    // convert the png back to a native image
+    let image = PNGImage::read(output.as_slice())?;
+    let mut output_bytes: Vec<u8> = Vec::new();
+    image.as_i1(&mut output_bytes)?;
+
+    assert_eq!(output_bytes, original_bytes);
+    Ok(())
+}
+
+#[test]
 fn i4() -> Result<()> {
     let original_bytes: &[u8] = include_bytes!("i4.png.bin");
     let image = NativeImage::read(original_bytes, ImageType::I4, 16, 1)?;

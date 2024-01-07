@@ -29,6 +29,19 @@ fn ci4() -> Result<()> {
 }
 
 #[test]
+fn i1() -> Result<()> {
+    let input_bytes: &[u8] = include_bytes!("i1.png");
+    let image = PNGImage::read(input_bytes)?;
+
+    let expected_bytes = include_bytes!("i1.png.bin");
+    let mut output: Vec<u8> = Vec::new();
+    image.as_i1(&mut output)?;
+
+    assert_eq!(output, expected_bytes);
+    Ok(())
+}
+
+#[test]
 fn i4() -> Result<()> {
     let input_bytes: &[u8] = include_bytes!("i4.png");
     let image = PNGImage::read(input_bytes)?;
