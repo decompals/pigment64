@@ -152,8 +152,8 @@ impl PNGImage {
 
             for chunk in i8_data.chunks_exact(8) {
                 let mut byte = 0;
-                for i in 0..8 {
-                    byte |= ((chunk[i] > 127) as u8) << (7 - i);
+                for (i, pixel) in chunk.iter().copied().enumerate() {
+                    byte |= ((pixel > 127) as u8) << (7 - i);
                 }
                 writer.write_u8(byte)?;
             }
