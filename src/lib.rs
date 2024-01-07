@@ -16,12 +16,14 @@ pub enum ImageSize {
     Bits8 = 1,
     Bits16 = 2,
     Bits32 = 3,
+    Bits1 = 4,
     DD = 5,
 }
 
 impl ImageSize {
     pub fn get_tlut_size(&self) -> usize {
         match self {
+            ImageSize::Bits1 => 0b10,
             ImageSize::Bits4 => 0x10,
             ImageSize::Bits8 => 0x100,
             ImageSize::Bits16 => 0x1000,
@@ -44,6 +46,7 @@ pub enum ImageFormat {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]
 #[repr(u8)]
 pub enum ImageType {
+    I1,
     I4,
     I8,
     Ia4,
@@ -60,6 +63,7 @@ impl ImageType {
         match self {
             ImageType::Ci4 => ImageSize::Bits4,
             ImageType::Ci8 => ImageSize::Bits8,
+            ImageType::I1 => ImageSize::Bits1,
             ImageType::I4 => ImageSize::Bits4,
             ImageType::I8 => ImageSize::Bits8,
             ImageType::Ia4 => ImageSize::Bits4,
@@ -74,6 +78,7 @@ impl ImageType {
         match self {
             ImageType::Ci4 => ImageFormat::Ci,
             ImageType::Ci8 => ImageFormat::Ci,
+            ImageType::I1 => ImageFormat::I,
             ImageType::I4 => ImageFormat::I,
             ImageType::I8 => ImageFormat::I,
             ImageType::Ia4 => ImageFormat::Ia,

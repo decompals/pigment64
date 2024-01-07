@@ -7,6 +7,7 @@ use pigment64::{ImageSize, ImageType};
 pub enum BinaryFormat {
     Ci4,
     Ci8,
+    I1,
     I4,
     I8,
     Ia4,
@@ -22,6 +23,7 @@ impl BinaryFormat {
         match self {
             BinaryFormat::Ci4 => CArrayWidth::U8,
             BinaryFormat::Ci8 => CArrayWidth::U8,
+            BinaryFormat::I1 => CArrayWidth::U8,
             BinaryFormat::I4 => CArrayWidth::U8,
             BinaryFormat::I8 => CArrayWidth::U8,
             BinaryFormat::Ia4 => CArrayWidth::U8,
@@ -37,6 +39,7 @@ impl BinaryFormat {
         match self {
             BinaryFormat::Ci4 => ImageType::Ci4,
             BinaryFormat::Ci8 => ImageType::Ci8,
+            BinaryFormat::I1 => ImageType::I1,
             BinaryFormat::I4 => ImageType::I4,
             BinaryFormat::I8 => ImageType::I8,
             BinaryFormat::Ia4 => ImageType::Ia4,
@@ -52,6 +55,7 @@ impl BinaryFormat {
         match self {
             BinaryFormat::Ci4 => Bits4,
             BinaryFormat::Ci8 => ImageSize::Bits8,
+            BinaryFormat::I1 => ImageSize::Bits1,
             BinaryFormat::I4 => ImageSize::Bits4,
             BinaryFormat::I8 => ImageSize::Bits8,
             BinaryFormat::Ia4 => ImageSize::Bits4,
