@@ -30,7 +30,7 @@ fn ci4() -> Result<()> {
 #[test]
 fn i1() -> Result<()> {
     let original_bytes: &[u8] = include_bytes!("i1.png.bin");
-    let image = NativeImage::read(original_bytes, ImageType::I1, 32, 63)?;
+    let image = NativeImage::read(original_bytes, ImageType::I1, 72, 72)?;
 
     let mut output: Vec<u8> = Vec::new();
     image.as_png(&mut output, None)?;
