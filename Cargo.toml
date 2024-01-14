@@ -1,6 +1,6 @@
 [package]
 name = "pigment64"
-version = "0.4.2"
+version = "0.4.3"
 edition = "2021"
 description = "A library for handling conversion between N64 texture formats and modern image formats"
 repository = "https://github.com/decompals/pigment64"
