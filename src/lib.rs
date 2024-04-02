@@ -9,6 +9,11 @@ pub use image::png_image::PNGImage;
 
 mod utils;
 
+use strum:: {
+    EnumCount, IntoEnumIterator
+};
+use strum_macros::{EnumCount as EnumCountMacro, EnumIter};
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]
 #[repr(u8)]
 pub enum ImageSize {
@@ -43,7 +48,14 @@ pub enum ImageFormat {
     I = 4,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]
+/// Represents the type of image.
+///
+/// This enum is used to specify the type of image, which determines the size and format of the
+/// image data.
+/// Each variant corresponds to a specific image type, such as indexed color (Ci), grayscale (I),
+/// grayscale with alpha (Ia), or red-green-blue-alpha (RGBA).
+///
+#[derive(Copy, Clone, Debug, PartialEq, EnumCountMacro, EnumIter, Eq, Hash, TryFromPrimitive)]
 #[repr(u8)]
 pub enum ImageType {
     I1,
@@ -59,6 +71,14 @@ pub enum ImageType {
 }
 
 impl ImageType {
+    /// Returns the size of the image type.
+    ///
+    /// This function returns the size of the image type, which represents the number of bits used
+    /// to store each pixel. The size is determined based on the image type variant.
+    ///
+    /// # Returns
+    ///
+    /// - `ImageSize` - The size of the image type.
     pub fn get_size(&self) -> ImageSize {
         match self {
             ImageType::Ci4 => ImageSize::Bits4,
@@ -74,6 +94,14 @@ impl ImageType {
         }
     }
 
+    /// Returns the format of the image type.
+    ///
+    /// This method returns the format of the image type, which represents the color model used by
+    /// the image. The format is determined based on the image type variant.
+    ///
+    /// # Returns
+    ///
+    /// - `ImageFormat` - The format of the image type.
     pub fn get_format(&self) -> ImageFormat {
         match self {
             ImageType::Ci4 => ImageFormat::Ci,
@@ -88,6 +116,38 @@ impl ImageType {
             ImageType::Rgba32 => ImageFormat::Rgba,
         }
     }
+
+    /// Returns the number of variants in the `ImageType` enum.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use pigment64::ImageType;
+    ///
+    /// // Get the count of ImageType variants
+    /// let count = ImageType::get_image_type_count();
+    /// println!("Number of ImageType variants: {}", count);
+    /// ```
+    pub fn get_count() -> usize {
+        ImageType::COUNT
+    }
+
+    /// Returns an iterator over all possible variants of `ImageType`, converted to their formatted
+    /// string representations.
+    ///
+    /// # Examples
+    /// ```
+    /// use pigment64::ImageType;
+    ///
+    /// // Iterate over the image formats
+    /// for image_format_type in ImageType::format_iter() {
+    ///     println!("{}", image_format_type);
+    /// }
+    /// ```
+    pub fn get_iter() -> impl Iterator<Item = ImageType> {
+        ImageType::iter().into_iter()
+    }
+
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, TryFromPrimitive)]
