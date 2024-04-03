@@ -9,10 +9,7 @@ pub use image::png_image::PNGImage;
 
 mod utils;
 
-use strum:: {
-    EnumCount, IntoEnumIterator
-};
-use strum_macros::{EnumCount as EnumCountMacro, EnumIter};
+use strum_macros::{EnumCount, EnumIter};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]
 #[repr(u8)]
@@ -26,6 +23,15 @@ pub enum ImageSize {
 }
 
 impl ImageSize {
+    /// Returns the size of the TLUT (Table Look-Up Table) based on the image size.
+    ///
+    /// # Returns
+    ///
+    /// The size of the TLUT as a `usize` value.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the image size is invalid.
     pub fn get_tlut_size(&self) -> usize {
         match self {
             ImageSize::Bits1 => 0b10,
@@ -55,7 +61,7 @@ pub enum ImageFormat {
 /// Each variant corresponds to a specific image type, such as indexed color (Ci), grayscale (I),
 /// grayscale with alpha (Ia), or red-green-blue-alpha (RGBA).
 ///
-#[derive(Copy, Clone, Debug, PartialEq, EnumCountMacro, EnumIter, Eq, Hash, TryFromPrimitive)]
+#[derive(Copy, Clone, Debug, PartialEq, EnumCount, EnumIter, Eq, Hash, TryFromPrimitive)]
 #[repr(u8)]
 pub enum ImageType {
     I1,
@@ -116,38 +122,6 @@ impl ImageType {
             ImageType::Rgba32 => ImageFormat::Rgba,
         }
     }
-
-    /// Returns the number of variants in the `ImageType` enum.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use pigment64::ImageType;
-    ///
-    /// // Get the count of ImageType variants
-    /// let count = ImageType::get_image_type_count();
-    /// println!("Number of ImageType variants: {}", count);
-    /// ```
-    pub fn get_count() -> usize {
-        ImageType::COUNT
-    }
-
-    /// Returns an iterator over all possible variants of `ImageType`, converted to their formatted
-    /// string representations.
-    ///
-    /// # Examples
-    /// ```
-    /// use pigment64::ImageType;
-    ///
-    /// // Iterate over the image formats
-    /// for image_format_type in ImageType::format_iter() {
-    ///     println!("{}", image_format_type);
-    /// }
-    /// ```
-    pub fn get_iter() -> impl Iterator<Item = ImageType> {
-        ImageType::iter().into_iter()
-    }
-
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, TryFromPrimitive)]

@@ -165,8 +165,9 @@ fn rgba32() -> Result<()> {
 }
 
 #[test]
-fn test_format_names() {
+fn test_image_type_strum() {
 
+    // Test iterating over the ImageType enum
     let mut image_iter = ImageType::iter();
     assert_eq!(Some(ImageType::I1), image_iter.next());
     assert_eq!(Some(ImageType::I4), image_iter.next());

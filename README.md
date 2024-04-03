@@ -1,5 +1,5 @@
 # pigment64
-pigment64 is a library written in Rust for decoding N64 images in to pngs.
+pigment64 is a library written in Rust for converting image data between native and png formats.
 
 ## Formats
 The library supports the following image formats:
