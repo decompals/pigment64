@@ -1,6 +1,7 @@
 use anyhow::Result;
 use pigment64::image::native_image::parse_tlut;
 use pigment64::{create_palette_from_png, ImageSize, ImageType, NativeImage, PNGImage, TextureLUT};
+use strum::{EnumCount, IntoEnumIterator};
 
 #[test]
 fn ci4() -> Result<()> {
@@ -161,4 +162,25 @@ fn rgba32() -> Result<()> {
 
     assert_eq!(output_bytes, original_bytes);
     Ok(())
+}
+
+#[test]
+fn test_image_type_strum() {
+    // Test iterating over the ImageType enum
+    let mut image_iter = ImageType::iter();
+    assert_eq!(Some(ImageType::I1), image_iter.next());
+    assert_eq!(Some(ImageType::I4), image_iter.next());
+    assert_eq!(Some(ImageType::I8), image_iter.next());
+    assert_eq!(Some(ImageType::Ia4), image_iter.next());
+    assert_eq!(Some(ImageType::Ia8), image_iter.next());
+    assert_eq!(Some(ImageType::Ia16), image_iter.next());
+    assert_eq!(Some(ImageType::Ci4), image_iter.next());
+    assert_eq!(Some(ImageType::Ci8), image_iter.next());
+    assert_eq!(Some(ImageType::Rgba16), image_iter.next());
+    assert_eq!(Some(ImageType::Rgba32), image_iter.next());
+    assert_eq!(None, image_iter.next());
+
+    // Test the Correct number of items
+    assert_eq!(10, ImageType::COUNT);
+    assert_eq!(ImageType::iter().count(), ImageType::COUNT);
 }

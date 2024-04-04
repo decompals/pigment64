@@ -9,6 +9,8 @@ pub use image::png_image::PNGImage;
 
 mod utils;
 
+use strum_macros::{EnumCount, EnumIter};
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]
 #[repr(u8)]
 pub enum ImageSize {
@@ -21,6 +23,15 @@ pub enum ImageSize {
 }
 
 impl ImageSize {
+    /// Returns the size of the TLUT (Table Look-Up Table) based on the image size.
+    ///
+    /// # Returns
+    ///
+    /// The size of the TLUT as a `usize` value.
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if the image size is invalid.
     pub fn get_tlut_size(&self) -> usize {
         match self {
             ImageSize::Bits1 => 0b10,
@@ -43,7 +54,14 @@ pub enum ImageFormat {
     I = 4,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]
+/// Represents the type of image.
+///
+/// This enum is used to specify the type of image, which determines the size and format of the
+/// image data.
+/// Each variant corresponds to a specific image type, such as indexed color (Ci), grayscale (I),
+/// grayscale with alpha (Ia), or red-green-blue-alpha (RGBA).
+///
+#[derive(Copy, Clone, Debug, PartialEq, EnumCount, EnumIter, Eq, Hash, TryFromPrimitive)]
 #[repr(u8)]
 pub enum ImageType {
     I1,
@@ -59,6 +77,14 @@ pub enum ImageType {
 }
 
 impl ImageType {
+    /// Returns the size of the image type.
+    ///
+    /// This function returns the size of the image type, which represents the number of bits used
+    /// to store each pixel. The size is determined based on the image type variant.
+    ///
+    /// # Returns
+    ///
+    /// - `ImageSize` - The size of the image type.
     pub fn get_size(&self) -> ImageSize {
         match self {
             ImageType::Ci4 => ImageSize::Bits4,
@@ -74,6 +100,14 @@ impl ImageType {
         }
     }
 
+    /// Returns the format of the image type.
+    ///
+    /// This method returns the format of the image type, which represents the color model used by
+    /// the image. The format is determined based on the image type variant.
+    ///
+    /// # Returns
+    ///
+    /// - `ImageFormat` - The format of the image type.
     pub fn get_format(&self) -> ImageFormat {
         match self {
             ImageType::Ci4 => ImageFormat::Ci,
