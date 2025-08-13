@@ -1,16 +1,20 @@
 [package]
 name = "pigment64"
-version = "0.4.5"
-edition = "2021"
+version = "0.4.6"
+edition = "2024"
 description = "A library for handling conversion between N64 texture formats and modern image formats"
 repository = "https://github.com/decompals/pigment64"
 license = "MIT"
+keywords = ["nintendo64", "texture", "conversion", "n64", "image"]
+categories = ["multimedia", "encoding", "game-development"]
+readme = "README.md"
 
 [dependencies]
-png = "0.17.13"
-clap = { version = "4.5.4", features = ["derive"] }
-anyhow = "1.0.81"
+png = "0.17.16"
+clap = { version = "4.5.40", features = ["derive"] }
+anyhow = "1.0.98"
 byteorder = "1.5.0"
-num_enum = "0.7.2"
-strum = "0.26.2"
-strum_macros = "0.26.2"
+num_enum = "0.7.4"
+strum = "0.27.2"
+strum_macros = "0.27.2"
+thiserror = "2.0.12"

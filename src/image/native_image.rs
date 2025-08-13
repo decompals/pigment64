@@ -1,6 +1,5 @@
 use crate::color::Color;
-use crate::{ImageSize, ImageType, TextureLUT};
-use anyhow::Result;
+use crate::{ImageSize, ImageType, Pigment64Error, TextureLUT};
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::{Cursor, Read, Write};
 
@@ -17,7 +16,7 @@ impl NativeImage {
         format: ImageType,
         width: u32,
         height: u32,
-    ) -> Result<Self> {
+    ) -> Result<Self, Pigment64Error> {
         let mut data = Vec::new();
         reader.read_to_end(&mut data)?;
 
@@ -30,7 +29,11 @@ impl NativeImage {
     }
 
     /// Decodes the image into RGBA8 format and writes it image bytes to the given writer.
-    pub fn decode<W: Write>(&self, writer: &mut W, tlut_color_table: Option<&[u8]>) -> Result<()> {
+    pub fn decode<W: Write>(
+        &self,
+        writer: &mut W,
+        tlut_color_table: Option<&[u8]>,
+    ) -> Result<(), Pigment64Error> {
         let mut cursor = Cursor::new(&self.data);
 
         match self.format {
@@ -108,27 +111,27 @@ impl NativeImage {
                 }
             }
             ImageType::Ci4 => {
-                assert!(tlut_color_table.is_some());
+                let tlut = tlut_color_table.ok_or(Pigment64Error::MissingTlut)?;
 
                 for _y in 0..self.height {
                     for _x in (0..self.width).step_by(2) {
                         let byte = cursor.read_u8()?;
 
                         let index = (byte >> 4) & 0x0F;
-                        writer.write_all(&get_tlut_color_at_index(tlut_color_table, index))?;
+                        writer.write_all(&get_tlut_color_at_index(tlut, index)?)?;
 
                         let index = byte & 0x0F;
-                        writer.write_all(&get_tlut_color_at_index(tlut_color_table, index))?;
+                        writer.write_all(&get_tlut_color_at_index(tlut, index)?)?;
                     }
                 }
             }
             ImageType::Ci8 => {
-                assert!(tlut_color_table.is_some());
+                let tlut = tlut_color_table.ok_or(Pigment64Error::MissingTlut)?;
 
                 for _y in 0..self.height {
                     for _x in 0..self.width {
                         let index = cursor.read_u8()?;
-                        writer.write_all(&get_tlut_color_at_index(tlut_color_table, index))?;
+                        writer.write_all(&get_tlut_color_at_index(tlut, index)?)?;
                     }
                 }
             }
@@ -157,7 +160,11 @@ impl NativeImage {
 
     /// Decodes the image into RGBA8 and writes it as PNG to the given writer.
     /// Exception is CI4 and CI8, which get written as an indexed PNG.
-    pub fn as_png<W: Write>(&self, writer: &mut W, tlut_color_table: Option<&[u8]>) -> Result<()> {
+    pub fn as_png<W: Write>(
+        &self,
+        writer: &mut W,
+        tlut_color_table: Option<&[u8]>,
+    ) -> Result<(), Pigment64Error> {
         let mut data: Vec<u8> = vec![];
         let mut encoder = png::Encoder::new(writer, self.width, self.height);
 
@@ -171,7 +178,7 @@ impl NativeImage {
                 self.decode(&mut data, None)?;
             }
             ImageType::Ci4 => {
-                assert!(tlut_color_table.is_some());
+                let tlut = tlut_color_table.ok_or(Pigment64Error::MissingTlut)?;
                 let mut cursor = Cursor::new(&self.data);
                 let mut data: Vec<u8> = vec![];
 
@@ -185,8 +192,7 @@ impl NativeImage {
                 encoder.set_color(png::ColorType::Indexed);
                 encoder.set_depth(png::BitDepth::Four);
 
-                let (palette_data, trans_data) =
-                    split_color_table_for_png(tlut_color_table.unwrap());
+                let (palette_data, trans_data) = split_color_table_for_png(tlut);
 
                 encoder.set_palette(palette_data);
                 encoder.set_trns(trans_data);
@@ -197,7 +203,7 @@ impl NativeImage {
                 return Ok(());
             }
             ImageType::Ci8 => {
-                assert!(tlut_color_table.is_some());
+                let tlut = tlut_color_table.ok_or(Pigment64Error::MissingTlut)?;
                 let mut cursor = Cursor::new(&self.data);
                 let mut data: Vec<u8> = vec![];
 
@@ -211,8 +217,7 @@ impl NativeImage {
                 encoder.set_color(png::ColorType::Indexed);
                 encoder.set_depth(png::BitDepth::Eight);
 
-                let (palette_data, trans_data) =
-                    split_color_table_for_png(tlut_color_table.unwrap());
+                let (palette_data, trans_data) = split_color_table_for_png(tlut);
 
                 encoder.set_palette(palette_data);
                 encoder.set_trns(trans_data);
@@ -241,16 +246,19 @@ impl NativeImage {
 }
 
 /// Parses a tlut into a RGBA8 color table
-pub fn parse_tlut(bytes: &[u8], size: ImageSize, mode: TextureLUT) -> Result<Vec<u8>> {
-    assert_eq!(
-        mode,
-        TextureLUT::Rgba16,
-        "Only RGBA16 TLUTs are supported at the moment"
-    );
+pub fn parse_tlut(
+    bytes: &[u8],
+    size: ImageSize,
+    mode: TextureLUT,
+) -> Result<Vec<u8>, Pigment64Error> {
+    if mode != TextureLUT::Rgba16 {
+        return Err(Pigment64Error::UnsupportedTlutMode(mode));
+    }
 
     let mut output: Vec<u8> = vec![];
     let cursor = &mut Cursor::new(bytes);
-    for _i in 0..(size.get_tlut_size()) {
+
+    for _i in 0..(size.get_tlut_size()?) {
         let pixel = cursor.read_u16::<BigEndian>()?;
         let color = Color::from_u16(pixel);
         output.write_all(&[color.r, color.g, color.b, color.a])?;
@@ -260,19 +268,20 @@ pub fn parse_tlut(bytes: &[u8], size: ImageSize, mode: TextureLUT) -> Result<Vec
 }
 
 /// Reads an rgba color from a buffer starting at the given offset
-fn get_tlut_color_at_index(tlut_color_table: Option<&[u8]>, index: u8) -> [u8; 4] {
-    assert!(tlut_color_table.is_some());
+fn get_tlut_color_at_index(tlut_color_table: &[u8], index: u8) -> Result<[u8; 4], Pigment64Error> {
+    let start = (index * 4) as usize;
+    let end = start + 4;
 
-    if let Some(tlut_color_table) = tlut_color_table {
-        let r = tlut_color_table[(index * 4) as usize];
-        let g = tlut_color_table[((index * 4) + 1) as usize];
-        let b = tlut_color_table[((index * 4) + 2) as usize];
-        let a = tlut_color_table[((index * 4) + 3) as usize];
-
-        return [r, g, b, a];
+    if end > tlut_color_table.len() {
+        return Err(Pigment64Error::TlutIndexOutOfBounds);
     }
 
-    unreachable!()
+    let r = tlut_color_table[start];
+    let g = tlut_color_table[start + 1];
+    let b = tlut_color_table[start + 2];
+    let a = tlut_color_table[start + 3];
+
+    Ok([r, g, b, a])
 }
 
 /// Splits a color table into a palette and a transparency table for png encoding

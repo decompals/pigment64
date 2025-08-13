@@ -1,6 +1,6 @@
 use anyhow::Result;
 use pigment64::image::native_image::parse_tlut;
-use pigment64::{create_palette_from_png, ImageSize, ImageType, NativeImage, PNGImage, TextureLUT};
+use pigment64::{ImageSize, ImageType, NativeImage, PNGImage, TextureLUT, create_palette_from_png};
 use strum::{EnumCount, IntoEnumIterator};
 
 #[test]

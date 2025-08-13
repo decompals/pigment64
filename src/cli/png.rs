@@ -1,8 +1,8 @@
 use crate::cli::defines::BinaryFormat;
 use anyhow::Result;
 use clap::Args;
-use pigment64::image::native_image::parse_tlut;
 use pigment64::TextureLUT;
+use pigment64::image::native_image::parse_tlut;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::PathBuf;
@@ -46,7 +46,11 @@ pub struct PngArgs {
 // MARK: - Handlers
 
 pub fn handle_png(args: &PngArgs) -> Result<()> {
-    assert_ne!(args.format, BinaryFormat::Palette, "palette is not a supported standalone output format. Use format ci4/ci8 with --palette instead.");
+    assert_ne!(
+        args.format,
+        BinaryFormat::Palette,
+        "palette is not a supported standalone output format. Use format ci4/ci8 with --palette instead."
+    );
 
     // Open the input file
     let input_file = File::open(&args.input).expect("could not open input file");

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use pigment64::{create_palette_from_png, PNGImage};
+use pigment64::{PNGImage, create_palette_from_png};
 use std::io::Cursor;
 
 // TODO: convert input into all permutations of color type and bit depth
