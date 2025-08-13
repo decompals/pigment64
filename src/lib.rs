@@ -10,17 +10,10 @@ use strum_macros::{EnumCount, EnumIter};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum Pigment64Error {
+#[non_exhaustive]
+pub enum Error {
     #[error("Invalid image size for TLUT: {0:?}")]
     InvalidSizeForTlut(ImageSize),
-    #[error("Unknown image size value: {0}")]
-    UnknownImageSize(u8),
-    #[error("Unknown image format value: {0}")]
-    UnknownImageFormat(u8),
-    #[error("Unknown image type value: {0}")]
-    UnknownImageType(u8),
-    #[error("Unknown texture LUT value: {0}")]
-    UnknownTextureLUT(u8),
     #[error("A TLUT color table is required for this image format")]
     MissingTlut,
     #[error("The specified TLUT mode is not supported: {0:?}")]
@@ -43,6 +36,8 @@ pub enum Pigment64Error {
         depth: png::BitDepth,
         target_format: ImageType,
     },
+    #[error("Palette format cannot be converted to a native image format")]
+    PaletteConversionError,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]
@@ -61,19 +56,16 @@ impl ImageSize {
     ///
     /// # Returns
     ///
-    /// The size of the TLUT as a `usize` value.
-    ///
-    /// # Panics
-    ///
-    /// This method will panic if the image size is invalid.
-    pub fn get_tlut_size(&self) -> Result<usize, Pigment64Error> {
+    /// An `Option` containing the size of the TLUT as a `usize` value, or `None`
+    /// if the image size is not valid for a TLUT.
+    pub fn get_tlut_size(&self) -> Option<usize> {
         match self {
-            ImageSize::Bits1 => Ok(0b10),
-            ImageSize::Bits4 => Ok(0x10),
-            ImageSize::Bits8 => Ok(0x100),
-            ImageSize::Bits16 => Ok(0x1000),
-            ImageSize::Bits32 => Ok(0x10000),
-            _ => Err(Pigment64Error::InvalidSizeForTlut(*self)),
+            ImageSize::Bits1 => Some(0b10),
+            ImageSize::Bits4 => Some(0x10),
+            ImageSize::Bits8 => Some(0x100),
+            ImageSize::Bits16 => Some(0x1000),
+            ImageSize::Bits32 => Some(0x10000),
+            _ => None,
         }
     }
 }

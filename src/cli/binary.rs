@@ -58,7 +58,7 @@ pub fn handle_binary(args: &BinaryArgs) -> Result<()> {
             image = image.flip(args.flip_x, args.flip_y);
         }
 
-        image.as_native(&mut bin, args.format.as_native())?;
+        image.as_native(&mut bin, args.format.as_native()?)?;
     };
 
     let mut output_file: Box<dyn Write>;

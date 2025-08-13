@@ -1,5 +1,5 @@
 use crate::color::Color;
-use crate::{ImageSize, ImageType, Pigment64Error, TextureLUT};
+use crate::{Error, ImageSize, ImageType, TextureLUT};
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::{Cursor, Read, Write};
 
@@ -16,7 +16,7 @@ impl NativeImage {
         format: ImageType,
         width: u32,
         height: u32,
-    ) -> Result<Self, Pigment64Error> {
+    ) -> Result<Self, Error> {
         let mut data = Vec::new();
         reader.read_to_end(&mut data)?;
 
@@ -33,7 +33,7 @@ impl NativeImage {
         &self,
         writer: &mut W,
         tlut_color_table: Option<&[u8]>,
-    ) -> Result<(), Pigment64Error> {
+    ) -> Result<(), Error> {
         let mut cursor = Cursor::new(&self.data);
 
         match self.format {
@@ -111,7 +111,7 @@ impl NativeImage {
                 }
             }
             ImageType::Ci4 => {
-                let tlut = tlut_color_table.ok_or(Pigment64Error::MissingTlut)?;
+                let tlut = tlut_color_table.ok_or(Error::MissingTlut)?;
 
                 for _y in 0..self.height {
                     for _x in (0..self.width).step_by(2) {
@@ -126,7 +126,7 @@ impl NativeImage {
                 }
             }
             ImageType::Ci8 => {
-                let tlut = tlut_color_table.ok_or(Pigment64Error::MissingTlut)?;
+                let tlut = tlut_color_table.ok_or(Error::MissingTlut)?;
 
                 for _y in 0..self.height {
                     for _x in 0..self.width {
@@ -164,7 +164,7 @@ impl NativeImage {
         &self,
         writer: &mut W,
         tlut_color_table: Option<&[u8]>,
-    ) -> Result<(), Pigment64Error> {
+    ) -> Result<(), Error> {
         let mut data: Vec<u8> = vec![];
         let mut encoder = png::Encoder::new(writer, self.width, self.height);
 
@@ -178,7 +178,7 @@ impl NativeImage {
                 self.decode(&mut data, None)?;
             }
             ImageType::Ci4 => {
-                let tlut = tlut_color_table.ok_or(Pigment64Error::MissingTlut)?;
+                let tlut = tlut_color_table.ok_or(Error::MissingTlut)?;
                 let mut cursor = Cursor::new(&self.data);
                 let mut data: Vec<u8> = vec![];
 
@@ -203,7 +203,7 @@ impl NativeImage {
                 return Ok(());
             }
             ImageType::Ci8 => {
-                let tlut = tlut_color_table.ok_or(Pigment64Error::MissingTlut)?;
+                let tlut = tlut_color_table.ok_or(Error::MissingTlut)?;
                 let mut cursor = Cursor::new(&self.data);
                 let mut data: Vec<u8> = vec![];
 
@@ -246,19 +246,19 @@ impl NativeImage {
 }
 
 /// Parses a tlut into a RGBA8 color table
-pub fn parse_tlut(
-    bytes: &[u8],
-    size: ImageSize,
-    mode: TextureLUT,
-) -> Result<Vec<u8>, Pigment64Error> {
+pub fn parse_tlut(bytes: &[u8], size: ImageSize, mode: TextureLUT) -> Result<Vec<u8>, Error> {
     if mode != TextureLUT::Rgba16 {
-        return Err(Pigment64Error::UnsupportedTlutMode(mode));
+        return Err(Error::UnsupportedTlutMode(mode));
     }
 
     let mut output: Vec<u8> = vec![];
     let cursor = &mut Cursor::new(bytes);
 
-    for _i in 0..(size.get_tlut_size()?) {
+    let tlut_size = size
+        .get_tlut_size()
+        .ok_or(Error::InvalidSizeForTlut(size))?;
+
+    for _i in 0..tlut_size {
         let pixel = cursor.read_u16::<BigEndian>()?;
         let color = Color::from_u16(pixel);
         output.write_all(&[color.r, color.g, color.b, color.a])?;
@@ -268,12 +268,12 @@ pub fn parse_tlut(
 }
 
 /// Reads an rgba color from a buffer starting at the given offset
-fn get_tlut_color_at_index(tlut_color_table: &[u8], index: u8) -> Result<[u8; 4], Pigment64Error> {
+fn get_tlut_color_at_index(tlut_color_table: &[u8], index: u8) -> Result<[u8; 4], Error> {
     let start = (index * 4) as usize;
     let end = start + 4;
 
     if end > tlut_color_table.len() {
-        return Err(Pigment64Error::TlutIndexOutOfBounds);
+        return Err(Error::TlutIndexOutOfBounds);
     }
 
     let r = tlut_color_table[start];

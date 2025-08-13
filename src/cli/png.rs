@@ -59,7 +59,7 @@ pub fn handle_png(args: &PngArgs) -> Result<()> {
     // Convert the image
     let image = pigment64::NativeImage::read(
         &mut input_reader,
-        args.format.as_native(),
+        args.format.as_native()?,
         args.width,
         args.height,
     )?;
@@ -79,7 +79,7 @@ pub fn handle_png(args: &PngArgs) -> Result<()> {
         let mut palette_bytes = Vec::new();
         palette_reader.read_to_end(&mut palette_bytes)?;
 
-        let palette = parse_tlut(&palette_bytes, args.format.get_size(), TextureLUT::Rgba16)?;
+        let palette = parse_tlut(&palette_bytes, args.format.get_size()?, TextureLUT::Rgba16)?;
         image.as_png(&mut output, Some(&palette))?;
     } else {
         image.as_png(&mut output, None)?;

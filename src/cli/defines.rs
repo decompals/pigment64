@@ -1,7 +1,6 @@
 use crate::cli::binary::CArrayWidth;
 use clap::ValueEnum;
-use pigment64::ImageSize::Bits4;
-use pigment64::{ImageSize, ImageType};
+use pigment64::{Error, ImageSize, ImageType};
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
 pub enum BinaryFormat {
@@ -35,35 +34,35 @@ impl BinaryFormat {
         }
     }
 
-    pub fn as_native(&self) -> ImageType {
+    pub fn as_native(&self) -> Result<ImageType, Error> {
         match self {
-            BinaryFormat::Ci4 => ImageType::Ci4,
-            BinaryFormat::Ci8 => ImageType::Ci8,
-            BinaryFormat::I1 => ImageType::I1,
-            BinaryFormat::I4 => ImageType::I4,
-            BinaryFormat::I8 => ImageType::I8,
-            BinaryFormat::Ia4 => ImageType::Ia4,
-            BinaryFormat::Ia8 => ImageType::Ia8,
-            BinaryFormat::Ia16 => ImageType::Ia16,
-            BinaryFormat::Rgba16 => ImageType::Rgba16,
-            BinaryFormat::Rgba32 => ImageType::Rgba32,
-            BinaryFormat::Palette => panic!("cannot convert palette to native format"),
+            BinaryFormat::Ci4 => Ok(ImageType::Ci4),
+            BinaryFormat::Ci8 => Ok(ImageType::Ci8),
+            BinaryFormat::I1 => Ok(ImageType::I1),
+            BinaryFormat::I4 => Ok(ImageType::I4),
+            BinaryFormat::I8 => Ok(ImageType::I8),
+            BinaryFormat::Ia4 => Ok(ImageType::Ia4),
+            BinaryFormat::Ia8 => Ok(ImageType::Ia8),
+            BinaryFormat::Ia16 => Ok(ImageType::Ia16),
+            BinaryFormat::Rgba16 => Ok(ImageType::Rgba16),
+            BinaryFormat::Rgba32 => Ok(ImageType::Rgba32),
+            BinaryFormat::Palette => Err(Error::PaletteConversionError),
         }
     }
 
-    pub fn get_size(&self) -> ImageSize {
+    pub fn get_size(&self) -> Result<ImageSize, Error> {
         match self {
-            BinaryFormat::Ci4 => Bits4,
-            BinaryFormat::Ci8 => ImageSize::Bits8,
-            BinaryFormat::I1 => ImageSize::Bits1,
-            BinaryFormat::I4 => ImageSize::Bits4,
-            BinaryFormat::I8 => ImageSize::Bits8,
-            BinaryFormat::Ia4 => ImageSize::Bits4,
-            BinaryFormat::Ia8 => ImageSize::Bits8,
-            BinaryFormat::Ia16 => ImageSize::Bits16,
-            BinaryFormat::Rgba16 => ImageSize::Bits16,
-            BinaryFormat::Rgba32 => ImageSize::Bits32,
-            BinaryFormat::Palette => panic!("cannot convert palette to native format"),
+            BinaryFormat::Ci4 => Ok(ImageSize::Bits4),
+            BinaryFormat::Ci8 => Ok(ImageSize::Bits8),
+            BinaryFormat::I1 => Ok(ImageSize::Bits1),
+            BinaryFormat::I4 => Ok(ImageSize::Bits4),
+            BinaryFormat::I8 => Ok(ImageSize::Bits8),
+            BinaryFormat::Ia4 => Ok(ImageSize::Bits4),
+            BinaryFormat::Ia8 => Ok(ImageSize::Bits8),
+            BinaryFormat::Ia16 => Ok(ImageSize::Bits16),
+            BinaryFormat::Rgba16 => Ok(ImageSize::Bits16),
+            BinaryFormat::Rgba32 => Ok(ImageSize::Bits32),
+            BinaryFormat::Palette => Err(Error::PaletteConversionError),
         }
     }
 }

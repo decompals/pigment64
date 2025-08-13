@@ -32,7 +32,7 @@ Commands:
 To use pigment64 in your Rust project, add it to your Cargo.toml:
 ```ini, TOML
 [dependencies]
-pigment64 = "0.4.5" # Check for the latest version on Crates.io
+pigment64 = "X.X" # Check for the latest version on Crates.io
 ```
 
 ## License
