@@ -2,6 +2,7 @@ use crate::cli::defines::BinaryFormat;
 use crate::write_buf_as_raw_array;
 use anyhow::Result;
 use clap::{Args, ValueEnum};
+use pigment64::Error;
 use std::{
     fs::File,
     io::{self, BufReader, BufWriter, Write},
@@ -58,7 +59,12 @@ pub fn handle_binary(args: &BinaryArgs) -> Result<()> {
             image = image.flip(args.flip_x, args.flip_y);
         }
 
-        image.as_native(&mut bin, args.format.as_native()?)?;
+        let image_type = args
+            .format
+            .as_native()
+            .ok_or(Error::PaletteConversionError)?;
+
+        image.as_native(&mut bin, image_type)?;
     };
 
     let mut output_file: Box<dyn Write>;

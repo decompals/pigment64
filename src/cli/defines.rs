@@ -1,6 +1,6 @@
 use crate::cli::binary::CArrayWidth;
 use clap::ValueEnum;
-use pigment64::{Error, ImageSize, ImageType};
+use pigment64::{ImageSize, ImageType};
 
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum, Debug)]
 pub enum BinaryFormat {
@@ -34,35 +34,35 @@ impl BinaryFormat {
         }
     }
 
-    pub fn as_native(&self) -> Result<ImageType, Error> {
+    pub fn as_native(&self) -> Option<ImageType> {
         match self {
-            BinaryFormat::Ci4 => Ok(ImageType::Ci4),
-            BinaryFormat::Ci8 => Ok(ImageType::Ci8),
-            BinaryFormat::I1 => Ok(ImageType::I1),
-            BinaryFormat::I4 => Ok(ImageType::I4),
-            BinaryFormat::I8 => Ok(ImageType::I8),
-            BinaryFormat::Ia4 => Ok(ImageType::Ia4),
-            BinaryFormat::Ia8 => Ok(ImageType::Ia8),
-            BinaryFormat::Ia16 => Ok(ImageType::Ia16),
-            BinaryFormat::Rgba16 => Ok(ImageType::Rgba16),
-            BinaryFormat::Rgba32 => Ok(ImageType::Rgba32),
-            BinaryFormat::Palette => Err(Error::PaletteConversionError),
+            BinaryFormat::Ci4 => Some(ImageType::Ci4),
+            BinaryFormat::Ci8 => Some(ImageType::Ci8),
+            BinaryFormat::I1 => Some(ImageType::I1),
+            BinaryFormat::I4 => Some(ImageType::I4),
+            BinaryFormat::I8 => Some(ImageType::I8),
+            BinaryFormat::Ia4 => Some(ImageType::Ia4),
+            BinaryFormat::Ia8 => Some(ImageType::Ia8),
+            BinaryFormat::Ia16 => Some(ImageType::Ia16),
+            BinaryFormat::Rgba16 => Some(ImageType::Rgba16),
+            BinaryFormat::Rgba32 => Some(ImageType::Rgba32),
+            BinaryFormat::Palette => None,
         }
     }
 
-    pub fn get_size(&self) -> Result<ImageSize, Error> {
+    pub fn get_size(&self) -> Option<ImageSize> {
         match self {
-            BinaryFormat::Ci4 => Ok(ImageSize::Bits4),
-            BinaryFormat::Ci8 => Ok(ImageSize::Bits8),
-            BinaryFormat::I1 => Ok(ImageSize::Bits1),
-            BinaryFormat::I4 => Ok(ImageSize::Bits4),
-            BinaryFormat::I8 => Ok(ImageSize::Bits8),
-            BinaryFormat::Ia4 => Ok(ImageSize::Bits4),
-            BinaryFormat::Ia8 => Ok(ImageSize::Bits8),
-            BinaryFormat::Ia16 => Ok(ImageSize::Bits16),
-            BinaryFormat::Rgba16 => Ok(ImageSize::Bits16),
-            BinaryFormat::Rgba32 => Ok(ImageSize::Bits32),
-            BinaryFormat::Palette => Err(Error::PaletteConversionError),
+            BinaryFormat::Ci4 => Some(ImageSize::Bits4),
+            BinaryFormat::Ci8 => Some(ImageSize::Bits8),
+            BinaryFormat::I1 => Some(ImageSize::Bits1),
+            BinaryFormat::I4 => Some(ImageSize::Bits4),
+            BinaryFormat::I8 => Some(ImageSize::Bits8),
+            BinaryFormat::Ia4 => Some(ImageSize::Bits4),
+            BinaryFormat::Ia8 => Some(ImageSize::Bits8),
+            BinaryFormat::Ia16 => Some(ImageSize::Bits16),
+            BinaryFormat::Rgba16 => Some(ImageSize::Bits16),
+            BinaryFormat::Rgba32 => Some(ImageSize::Bits32),
+            BinaryFormat::Palette => None,
         }
     }
 }
