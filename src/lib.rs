@@ -1,24 +1,53 @@
-use num_enum::TryFromPrimitive;
-
 pub mod color;
-
 pub mod image;
-pub use image::native_image::NativeImage;
-pub use image::png_image::create_palette_from_png;
-pub use image::png_image::PNGImage;
 
-mod utils;
+pub use crate::image::native_image::NativeImage;
+pub use crate::image::png_image::{PNGImage, create_palette_from_png};
 
+// Imports from external crates
+use num_enum::TryFromPrimitive;
 use strum_macros::{EnumCount, EnumIter};
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+#[non_exhaustive]
+pub enum Error {
+    #[error("Invalid image size for TLUT: {0:?}")]
+    InvalidSizeForTlut(ImageSize),
+    #[error("A TLUT color table is required for this image format")]
+    MissingTlut,
+    #[error("The specified TLUT mode is not supported: {0:?}")]
+    UnsupportedTlutMode(TextureLUT),
+    #[error("TLUT index is out of bounds")]
+    TlutIndexOutOfBounds,
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("PNG encoding error: {0}")]
+    PngEncoding(#[from] png::EncodingError),
+    #[error("PNG decoding error: {0}")]
+    PngDecoding(#[from] png::DecodingError),
+    #[error("PNG is missing a palette, which is required for this operation")]
+    MissingPngPalette,
+    #[error(
+        "Unsupported PNG format for conversion to {target_format:?}: color={color:?}, depth={depth:?}"
+    )]
+    UnsupportedPngConversion {
+        color: png::ColorType,
+        depth: png::BitDepth,
+        target_format: ImageType,
+    },
+    #[error("Palette format cannot be converted to a native image format")]
+    PaletteConversionError,
+}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]
 #[repr(u8)]
 pub enum ImageSize {
+    Bits1 = 4,
     Bits4 = 0,
     Bits8 = 1,
     Bits16 = 2,
     Bits32 = 3,
-    Bits1 = 4,
     DD = 5,
 }
 
@@ -27,19 +56,16 @@ impl ImageSize {
     ///
     /// # Returns
     ///
-    /// The size of the TLUT as a `usize` value.
-    ///
-    /// # Panics
-    ///
-    /// This method will panic if the image size is invalid.
-    pub fn get_tlut_size(&self) -> usize {
+    /// An `Option` containing the size of the TLUT as a `usize` value, or `None`
+    /// if the image size is not valid for a TLUT.
+    pub fn get_tlut_size(&self) -> Option<usize> {
         match self {
-            ImageSize::Bits1 => 0b10,
-            ImageSize::Bits4 => 0x10,
-            ImageSize::Bits8 => 0x100,
-            ImageSize::Bits16 => 0x1000,
-            ImageSize::Bits32 => 0x10000,
-            _ => panic!("Invalid size: {:?}", self),
+            ImageSize::Bits1 => Some(0b10),
+            ImageSize::Bits4 => Some(0x10),
+            ImageSize::Bits8 => Some(0x100),
+            ImageSize::Bits16 => Some(0x1000),
+            ImageSize::Bits32 => Some(0x10000),
+            _ => None,
         }
     }
 }
