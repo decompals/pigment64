@@ -34,6 +34,40 @@ To use pigment64 in your Rust project simply run a
 cargo add pigment64
 ```
 
+## Python bindings
+
+pigment64 can also be used as a Python module, allowing you to integrate it into your Python scripts and tools.
+
+You can install the Python module from PyPI:
+
+```bash
+pip install pigment64
+```
+
+### Python Binding Development
+
+This project uses `maturin` to build the Rust-based Python extension. It is recommended to use a Python virtual environment.
+
+#### Setup
+
+1.  **Create and activate a virtual environment:**
+    ```bash
+    python3 -m venv .venv
+    source .venv/bin/activate
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    pip install maturin pytest
+    ```
+
+#### Building
+
+To compile the library and install it into your active virtual environment, run:
+
+```bash
+maturin develop --features python_bindings
+```
 ## License
 
 This project is licensed under the MIT License.

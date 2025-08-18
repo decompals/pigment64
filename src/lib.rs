@@ -9,6 +9,14 @@ use num_enum::TryFromPrimitive;
 use strum_macros::{EnumCount, EnumIter};
 use thiserror::Error;
 
+// PyO3 imports (will only be used if the feature is enabled)
+#[cfg(feature = "python_bindings")]
+use pyo3::prelude::*;
+#[cfg(feature = "python_bindings")]
+use pyo3::types::PyBytes;
+#[cfg_attr(not(feature = "python_bindings"), allow(unused_imports))]
+use std::io::Cursor;
+
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum Error {
@@ -38,6 +46,14 @@ pub enum Error {
     },
     #[error("Palette format cannot be converted to a native image format")]
     PaletteConversionError,
+}
+
+// Convert pigment64 errors into a Python exception
+#[cfg(feature = "python_bindings")]
+impl From<Error> for PyErr {
+    fn from(err: Error) -> PyErr {
+        PyErr::new::<pyo3::exceptions::PyValueError, _>(err.to_string())
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]
@@ -156,4 +172,95 @@ pub enum TextureLUT {
     None = 0,
     Rgba16 = 2,
     Ia16 = 3,
+}
+
+// --- Python Bindings ---
+
+#[cfg(feature = "python_bindings")]
+#[pyclass(name = "PNGImage")]
+struct PyPNGImage {
+    img: PNGImage,
+}
+
+#[cfg(feature = "python_bindings")]
+#[pymethods]
+impl PyPNGImage {
+    #[new]
+    fn new(bytes: &[u8]) -> PyResult<Self> {
+        let img = PNGImage::read(bytes)?;
+        Ok(PyPNGImage { img })
+    }
+
+    fn as_i8(&self) -> PyResult<Py<PyBytes>> {
+        let mut buf = Vec::new();
+        self.img.as_i8(&mut buf)?;
+        let py = unsafe { Python::assume_gil_acquired() };
+        Ok(PyBytes::new(py, &buf).into())
+    }
+
+    fn as_rgba16(&self) -> PyResult<Py<PyBytes>> {
+        let mut buf = Vec::new();
+        self.img.as_rgba16(&mut buf)?;
+        let py = unsafe { Python::assume_gil_acquired() };
+        Ok(PyBytes::new(py, &buf).into())
+    }
+}
+
+#[cfg(feature = "python_bindings")]
+#[pyfunction]
+fn extract_palette_from_png_bytes(py: Python, png_bytes: &[u8]) -> PyResult<Py<PyBytes>> {
+    let mut png_cursor = Cursor::new(png_bytes);
+    let mut palette_data_vec: Vec<u8> = Vec::new();
+    create_palette_from_png(&mut png_cursor, &mut palette_data_vec)?;
+    let py_bytes = PyBytes::new(py, &palette_data_vec);
+    Ok(py_bytes.into())
+}
+
+#[cfg(feature = "python_bindings")]
+#[pyfunction]
+#[pyo3(name = "native_to_png")]
+fn native_to_png_py(
+    py: Python,
+    bytes: &[u8],
+    img_type_str: &str,
+    width: u32,
+    height: u32,
+    tlut: Option<&[u8]>,
+) -> PyResult<Py<PyBytes>> {
+    let img_type = match img_type_str {
+        "rgba32" => ImageType::Rgba32,
+        "rgba16" => ImageType::Rgba16,
+        "ia16" => ImageType::Ia16,
+        "ia8" => ImageType::Ia8,
+        "ia4" => ImageType::Ia4,
+        "i8" => ImageType::I8,
+        "i4" => ImageType::I4,
+        "i1" => ImageType::I1,
+        "ci8" => ImageType::Ci8,
+        "ci4" => ImageType::Ci4,
+        _ => {
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Invalid image type: '{}'",
+                img_type_str
+            )));
+        }
+    };
+
+    let mut reader = Cursor::new(bytes);
+    let native_image = NativeImage::read(&mut reader, img_type, width, height)?;
+
+    let mut png_buf = Vec::new();
+    native_image.as_png(&mut png_buf, tlut)?;
+
+    Ok(PyBytes::new(py, &png_buf).into())
+}
+
+#[cfg(feature = "python_bindings")]
+#[pymodule]
+#[pyo3(name = "pigment64")]
+fn pigment64_py_module(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(extract_palette_from_png_bytes, m)?)?;
+    m.add_function(wrap_pyfunction!(native_to_png_py, m)?)?;
+    m.add_class::<PyPNGImage>()?;
+    Ok(())
 }
