@@ -33,6 +33,10 @@ pub struct BinaryArgs {
     #[arg(long)]
     flip_y: bool,
 
+    /// Swap words in odd rows
+    #[arg(long)]
+    word_swap: bool,
+
     /// Output a raw C array which can be `#include`d in a file. The default output type width matches the FORMAT provided, but it can be overridden with --c_array_width
     #[arg(long)]
     c_array: bool,
@@ -50,6 +54,8 @@ pub fn handle_binary(args: &BinaryArgs) -> Result<()> {
 
     // Convert the image
     let mut bin: Vec<u8> = Vec::new();
+    let image_type;
+
     if let BinaryFormat::Palette = args.format {
         pigment64::create_palette_from_png(&mut input_reader, &mut bin)?;
     } else {
@@ -59,12 +65,35 @@ pub fn handle_binary(args: &BinaryArgs) -> Result<()> {
             image = image.flip(args.flip_x, args.flip_y);
         }
 
-        let image_type = args
+        image_type = args
             .format
             .as_native()
             .ok_or(Error::PaletteConversionError)?;
 
         image.as_native(&mut bin, image_type)?;
+
+        if args.word_swap {
+            let bpp = image_type.get_size().get_bpp();
+            let bytes_per_row = (image.width() * bpp) / 8;
+
+            for y in (1..image.height()).step_by(2) {
+                let row_start = (y * bytes_per_row) as usize;
+                let row_end = row_start + bytes_per_row as usize;
+
+                if row_end > bin.len() {
+                    continue;
+                }
+
+                let row_data = &mut bin[row_start..row_end];
+
+                for word_pair in row_data.chunks_mut(8) {
+                    if word_pair.len() == 8 {
+                        let (word1, word2) = word_pair.split_at_mut(4);
+                        word1.swap_with_slice(word2);
+                    }
+                }
+            }
+        }
     };
 
     let mut output_file: Box<dyn Write>;
