@@ -68,6 +68,18 @@ impl ImageSize {
             _ => None,
         }
     }
+
+    /// Returns the bits per pixel.
+    pub fn get_bpp(&self) -> u32 {
+        match self {
+            ImageSize::Bits1 => 1,
+            ImageSize::Bits4 => 4,
+            ImageSize::Bits8 => 8,
+            ImageSize::Bits16 => 16,
+            ImageSize::Bits32 => 32,
+            ImageSize::DD => 0,
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, TryFromPrimitive)]

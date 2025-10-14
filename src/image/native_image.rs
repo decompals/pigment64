@@ -243,6 +243,29 @@ impl NativeImage {
 
         Ok(())
     }
+
+    pub fn swap_word_rows(&mut self) {
+        let bpp = self.format.get_size().get_bpp();
+        let bytes_per_row = (self.width * bpp) / 8;
+
+        for y in (1..self.height).step_by(2) {
+            let row_start = (y * bytes_per_row) as usize;
+            let row_end = row_start + bytes_per_row as usize;
+
+            if row_end > self.data.len() {
+                continue;
+            }
+
+            let row_data = &mut self.data[row_start..row_end];
+
+            for word_pair in row_data.chunks_mut(8) {
+                if word_pair.len() == 8 {
+                    let (word1, word2) = word_pair.split_at_mut(4);
+                    word1.swap_with_slice(word2);
+                }
+            }
+        }
+    }
 }
 
 /// Parses a tlut into a RGBA8 color table
