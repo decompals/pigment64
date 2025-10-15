@@ -49,13 +49,13 @@ This project uses `maturin` to build the Rust-based Python extension. It is reco
 
 #### Setup
 
-1.  **Create and activate a virtual environment:**
+1.  Create and activate a virtual environment:
     ```bash
     python3 -m venv .venv
     source .venv/bin/activate
     ```
 
-2.  **Install dependencies:**
+2.  Install dependencies:
     ```bash
     pip install maturin pytest
     ```
@@ -65,7 +65,7 @@ This project uses `maturin` to build the Rust-based Python extension. It is reco
 To compile the library and install it into your active virtual environment, run:
 
 ```bash
-maturin develop --features python_bindings
+maturin develop
 ```
 ## License
 

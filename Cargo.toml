@@ -18,6 +18,9 @@ crate-type = ["cdylib", "rlib"]
 name = "pigment64_cli"
 path = "src/main.rs"
 
+[features]
+python_bindings = ["dep:pyo3"]
+
 [dependencies]
 png = "0.17.16"
 clap = { version = "4.5.45", features = ["derive"] }
@@ -29,7 +32,4 @@ strum_macros = "0.27.2"
 thiserror = "2.0.15"
 
 # Python bindings
-pyo3 = { version="0.25", features = ["extension-module"], optional = true }
-
-[features]
-python_bindings = ["dep:pyo3"]
+pyo3 = { version="0.26", features = ["extension-module"], optional = true }

@@ -1,6 +1,7 @@
 on:
     release:
       types: [created]
+
 jobs:
     release:
       name: release ${{ matrix.target }}
@@ -12,8 +13,11 @@ jobs:
             - target: x86_64-pc-windows-gnu
             - target: x86_64-unknown-linux-musl
             - target: x86_64-apple-darwin
+
       steps:
-        - uses: actions/checkout@master
+        - name: Checkout repo
+          uses: actions/checkout@5
+
         - name: Compile and release
           uses: rust-build/rust-build.action@v1.4.5
           env:
@@ -21,14 +25,12 @@ jobs:
           with:
             RUSTTARGET: ${{ matrix.target }}
             ARCHIVE_TYPES: tar.gz
+
     publish:
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v3
-        - uses: actions-rs/toolchain@v1
-          with:
-              toolchain: stable
-              override: true
+        - uses: actions/checkout@v5
+        - uses: dtolnay/rust-toolchain@stable
         - uses: katyo/publish-crates@v2
           with:
               registry-token: ${{ secrets.CRATE_AUTH_TOKEN }}

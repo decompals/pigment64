@@ -9,12 +9,10 @@ use num_enum::TryFromPrimitive;
 use strum_macros::{EnumCount, EnumIter};
 use thiserror::Error;
 
-// PyO3 imports (will only be used if the feature is enabled)
+// Conditional imports for Python bindings
 #[cfg(feature = "python_bindings")]
-use pyo3::prelude::*;
+use pyo3::{Bound, prelude::*, types::PyBytes};
 #[cfg(feature = "python_bindings")]
-use pyo3::types::PyBytes;
-#[cfg_attr(not(feature = "python_bindings"), allow(unused_imports))]
 use std::io::Cursor;
 
 #[derive(Debug, Error)]
@@ -194,14 +192,14 @@ impl PyPNGImage {
     fn as_i8(&self) -> PyResult<Py<PyBytes>> {
         let mut buf = Vec::new();
         self.img.as_i8(&mut buf)?;
-        let py = unsafe { Python::assume_gil_acquired() };
+        let py = unsafe { Python::assume_attached() };
         Ok(PyBytes::new(py, &buf).into())
     }
 
     fn as_rgba16(&self) -> PyResult<Py<PyBytes>> {
         let mut buf = Vec::new();
         self.img.as_rgba16(&mut buf)?;
-        let py = unsafe { Python::assume_gil_acquired() };
+        let py = unsafe { Python::assume_attached() };
         Ok(PyBytes::new(py, &buf).into())
     }
 }
