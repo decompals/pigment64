@@ -13,24 +13,23 @@ jobs:
                 python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
 
         steps:
-            - name: Checkout repo
-              uses: actions/checkout@v5
+            - uses: actions/checkout@v5
 
-            - name: Setup Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v6
+            - uses: actions/setup-python@v6
               with:
                   python-version: ${{ matrix.python-version }}
-                  allow-prereleases: true # Needed for Python 3.14
+                  allow-prereleases: true
 
-            - name: Install dependencies
+            - name: Install tools
               run: |
-                  python3 -m pip install --upgrade pip
-                  python3 -m pip install maturin pytest
+                  pip install --upgrade pip
+                  pip install maturin pytest
 
-            - name: Build and install extension
-              run: |
-                  maturin develop --release
+            - name: Build wheel
+              run: maturin build --release
+
+            - name: Install wheel
+              run: pip install target/wheels/*.whl
 
             - name: Run tests
-              run: |
-                  pytest -vv python_bindings/tests.py
+              run: pytest -vv python_bindings/tests.py
