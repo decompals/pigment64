@@ -183,14 +183,10 @@ pub enum TextureLUT {
 // feature is enabled.
 #[cfg(feature = "python_bindings")]
 mod py_bindings {
-    // Import necessary types from the parent module (this file)
     use super::{Error, ImageType, NativeImage, PNGImage, create_palette_from_png};
-
-    // Import pyo3 and other needed types
     use pyo3::{Bound, prelude::*, types::PyBytes};
     use std::io::Cursor;
 
-    // Convert pigment64 errors into a Python exception
     impl From<Error> for PyErr {
         fn from(err: Error) -> PyErr {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(err.to_string())
@@ -210,29 +206,25 @@ mod py_bindings {
             Ok(PyPNGImage { img })
         }
 
-        /// Safely gets the `py: Python` token from pyo3
         fn as_i8(&self, py: Python) -> PyResult<Py<PyBytes>> {
             let mut buf = Vec::new();
             self.img.as_i8(&mut buf)?;
-            Ok(PyBytes::new_bound(py, &buf).into())
+            Ok(PyBytes::new(py, &buf).into())
         }
 
-        /// Safely gets the `py: Python` token from pyo3
         fn as_rgba16(&self, py: Python) -> PyResult<Py<PyBytes>> {
             let mut buf = Vec::new();
             self.img.as_rgba16(&mut buf)?;
-            Ok(PyBytes::new_bound(py, &buf).into())
+            Ok(PyBytes::new(py, &buf).into())
         }
     }
 
     #[pyfunction]
     fn extract_palette_from_png_bytes(py: Python, png_bytes: &[u8]) -> PyResult<Py<PyBytes>> {
         let mut png_cursor = Cursor::new(png_bytes);
-        // Let Rust infer the type from the variable declaration
-        let mut palette_data_vec: Vec<u8> = Vec::new();
+        let mut palette_data_vec = Vec::new();
         create_palette_from_png(&mut png_cursor, &mut palette_data_vec)?;
-        let py_bytes = PyBytes::new_bound(py, &palette_data_vec);
-        Ok(py_bytes.into())
+        Ok(PyBytes::new(py, &palette_data_vec).into())
     }
 
     #[pyfunction]
@@ -245,7 +237,6 @@ mod py_bindings {
         height: u32,
         tlut: Option<&[u8]>,
     ) -> PyResult<Py<PyBytes>> {
-        // Use the new from_name function
         let img_type = ImageType::from_name(img_type_str).ok_or_else(|| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Invalid image type: '{}'",
@@ -259,10 +250,9 @@ mod py_bindings {
         let mut png_buf = Vec::new();
         native_image.as_png(&mut png_buf, tlut)?;
 
-        Ok(PyBytes::new_bound(py, &png_buf).into())
+        Ok(PyBytes::new(py, &png_buf).into())
     }
 
-    /// This is the main entry point for the Python module
     #[pymodule]
     #[pyo3(name = "pigment64")]
     fn pigment64_py_module(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
