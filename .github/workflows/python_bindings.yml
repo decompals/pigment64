@@ -32,4 +32,4 @@ jobs:
               run: pip install target/wheels/*.whl
 
             - name: Run tests
-              run: pytest -vv python_bindings/tests.py
+              run: pytest -vv
