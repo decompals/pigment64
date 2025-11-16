@@ -4,37 +4,27 @@ name: Python bindings
 on: [push, pull_request]
 
 jobs:
-  tests_cases:
-    name: Tests for Python ${{ matrix.py_version}}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        py_version:
-          - '3.8'
-          - '3.9'
-          - '3.10'
-          - '3.11'
-          - '3.12'
-          - '3.13'
-          - '3.14'
-          - '3.x' # Explicit latest
+    tests_cases:
+        name: Tests for Python ${{ matrix.py_version}}
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: ["3.9", "3.10", "3.11", "3.12", "3.13, 3.14"]
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v5
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v5
 
-      - name: Setup Python ${{ matrix.py_version }}
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.py_version }}
+            - name: Setup Python ${{ matrix.py_version }}
+              uses: actions/setup-python@v6
+              with:
+                  python-version: ${{ matrix.py_version }}
 
-      - name: Setup requirements
-        run: |
-          python3 --version
-          python3 -m pip install -U maturin
-      - name: Install local pigment64
-        run: python3 -m pip install ./lib
-
-      - name: Run tests
-        run: python3 ./python_bindings/tests.py
+            - name: Install dependencies
+              run: |
+                  python3 -m pip install --upgrade pip
+                  python3 -m pip install maturin pytest
+            - name: Build and install
+              run: maturin develop
+            - name: Test
+              run: python3 -m pytest
