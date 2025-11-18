@@ -13,7 +13,7 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/decompals/pigment64"
+"Repository" = "https://github.com/decompals/pigment64"
 "Bug Tracker" = "https://github.com/decompals/pigment64/issues"
 
 [build-system]
