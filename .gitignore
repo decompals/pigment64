@@ -1,2 +1,5 @@
 /target
 .idea
+
+# Ignore Pytest artifacts
+/tests/__pycache__
