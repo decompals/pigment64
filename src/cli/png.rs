@@ -40,6 +40,10 @@ pub struct PngArgs {
     /// Flip the image on the y axis
     #[arg(long)]
     flip_y: bool,
+
+    /// Un-swap words in odd rows
+    #[arg(long)]
+    word_swap: bool,
 }
 
 // MARK: - Handlers
@@ -59,8 +63,12 @@ pub fn handle_png(args: &PngArgs) -> Result<()> {
         .as_native()
         .ok_or(Error::PaletteConversionError)?;
 
-    let image =
+    let mut image =
         pigment64::NativeImage::read(&mut input_reader, image_type, args.width, args.height)?;
+
+    if args.word_swap {
+        image.swap_word_rows();
+    }
 
     let mut output: Vec<u8> = Vec::new();
 

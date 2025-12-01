@@ -40,6 +40,14 @@ impl PNGImage {
         })
     }
 
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
     pub fn flip(&self, flip_x: bool, flip_y: bool) -> PNGImage {
         let mut flipped_bytes = vec![0; self.data.len()];
         let samples = self.color_type.samples();
