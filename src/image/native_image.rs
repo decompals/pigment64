@@ -247,7 +247,7 @@ impl NativeImage {
     pub fn swap_word_rows(&mut self) {
         let bpp = self.format.get_size().get_bpp();
         // Use ceiling division to handle non-byte-aligned widths correctly
-        let bytes_per_row = (self.width * bpp + 7) / 8;
+        let bytes_per_row = (self.width * bpp).div_ceil(8);
 
         const WORD_SIZE: usize = 4;
         const SWAP_CHUNK_SIZE: usize = WORD_SIZE * 2;
