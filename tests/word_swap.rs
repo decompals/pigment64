@@ -42,7 +42,7 @@ fn test_swap_logic(image_type: ImageType, asset_name: &str) {
 
     let bpp = image_type.get_size().get_bpp();
     // Ceiling division handles widths that aren't byte-aligned
-    let bytes_per_row = ((width * bpp) + 7) / 8;
+    let bytes_per_row = (width * bpp).div_ceil(8);
     let bytes_per_row = bytes_per_row as usize;
 
     for y in (1..height).step_by(2) {
