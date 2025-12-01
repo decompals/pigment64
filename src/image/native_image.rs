@@ -246,21 +246,26 @@ impl NativeImage {
 
     pub fn swap_word_rows(&mut self) {
         let bpp = self.format.get_size().get_bpp();
-        let bytes_per_row = (self.width * bpp) / 8;
+        // Use ceiling division to handle non-byte-aligned widths correctly
+        let bytes_per_row = (self.width * bpp + 7) / 8;
+
+        const WORD_SIZE: usize = 4;
+        const SWAP_CHUNK_SIZE: usize = WORD_SIZE * 2;
 
         for y in (1..self.height).step_by(2) {
             let row_start = (y * bytes_per_row) as usize;
             let row_end = row_start + bytes_per_row as usize;
 
             if row_end > self.data.len() {
-                continue;
+                break; // Stop if we run out of data
             }
 
             let row_data = &mut self.data[row_start..row_end];
 
-            for word_pair in row_data.chunks_mut(8) {
-                if word_pair.len() == 8 {
-                    let (word1, word2) = word_pair.split_at_mut(4);
+            for word_pair in row_data.chunks_mut(SWAP_CHUNK_SIZE) {
+                // Ensure we have a full pair of words to swap
+                if word_pair.len() == SWAP_CHUNK_SIZE {
+                    let (word1, word2) = word_pair.split_at_mut(WORD_SIZE);
                     word1.swap_with_slice(word2);
                 }
             }
