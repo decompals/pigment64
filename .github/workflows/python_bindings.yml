@@ -1,0 +1,35 @@
+name: Python bindings
+
+on: [push, pull_request]
+
+jobs:
+    python_bindings:
+        name: Python ${{ matrix.python-version }}
+        runs-on: ubuntu-latest
+
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-python@v6
+              with:
+                  python-version: ${{ matrix.python-version }}
+                  allow-prereleases: true
+
+            - name: Install tools
+              run: |
+                  pip install --upgrade pip
+                  pip install maturin pytest
+
+            - name: Build wheel
+              run: maturin build --release
+
+            - name: Install wheel
+              run: pip install target/wheels/*.whl
+
+            - name: Run tests
+              run: pytest -vv
