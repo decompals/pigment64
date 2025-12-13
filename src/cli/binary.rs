@@ -54,7 +54,6 @@ pub fn handle_binary(args: &BinaryArgs) -> Result<()> {
 
     // Convert the image
     let mut bin: Vec<u8> = Vec::new();
-    let image_type;
 
     if let BinaryFormat::Palette = args.format {
         pigment64::create_palette_from_png(&mut input_reader, &mut bin)?;
@@ -65,7 +64,7 @@ pub fn handle_binary(args: &BinaryArgs) -> Result<()> {
             image = image.flip(args.flip_x, args.flip_y);
         }
 
-        image_type = args
+        let image_type = args
             .format
             .as_native()
             .ok_or(Error::PaletteConversionError)?;

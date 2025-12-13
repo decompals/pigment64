@@ -30,7 +30,9 @@ num_enum = "0.7.4"
 strum = "0.27.2"
 strum_macros = "0.27.2"
 thiserror = "2.0.15"
-assert_cmd = "2.1.1"
 
 # Python bindings
 pyo3 = { version="0.27.1", features = ["extension-module"], optional = true }
+
+[dev-dependencies]
+assert_cmd = "2.1.1"
