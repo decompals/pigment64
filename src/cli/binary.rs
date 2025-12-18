@@ -33,6 +33,10 @@ pub struct BinaryArgs {
     #[arg(long)]
     flip_y: bool,
 
+    /// Swap words in odd rows
+    #[arg(long)]
+    word_swap: bool,
+
     /// Output a raw C array which can be `#include`d in a file. The default output type width matches the FORMAT provided, but it can be overridden with --c_array_width
     #[arg(long)]
     c_array: bool,
@@ -50,6 +54,7 @@ pub fn handle_binary(args: &BinaryArgs) -> Result<()> {
 
     // Convert the image
     let mut bin: Vec<u8> = Vec::new();
+
     if let BinaryFormat::Palette = args.format {
         pigment64::create_palette_from_png(&mut input_reader, &mut bin)?;
     } else {
@@ -65,6 +70,17 @@ pub fn handle_binary(args: &BinaryArgs) -> Result<()> {
             .ok_or(Error::PaletteConversionError)?;
 
         image.as_native(&mut bin, image_type)?;
+
+        if args.word_swap {
+            let mut native_image = pigment64::NativeImage {
+                format: image_type,
+                width: image.width(),
+                height: image.height(),
+                data: bin,
+            };
+            native_image.swap_word_rows();
+            bin = native_image.data;
+        }
     };
 
     let mut output_file: Box<dyn Write>;
