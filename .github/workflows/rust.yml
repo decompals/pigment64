@@ -2,9 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -15,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout reposistory
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
 
       - name: Run cargo fmt
         run: cargo fmt --all -- --check
@@ -25,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout reposistory
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
 
       - name: Run cargo clippy
         run: |
@@ -35,20 +33,20 @@ jobs:
   macos-check:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@main
       - name: Test
         run: cargo test
 
   ubuntu-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@main
       - name: Test
         run: cargo test
 
   windows-check:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@main
       - name: Test
         run: cargo test
