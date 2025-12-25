@@ -1,4 +1,5 @@
 # pigment64
+
 [![Rust](https://github.com/decompals/pigment64/actions/workflows/rust.yml/badge.svg)](https://github.com/decompals/pigment64/actions/workflows/rust.yml)
 [![Crates.io](https://img.shields.io/crates/v/pigment64.svg)](https://crates.io/crates/pigment64)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/decompals/pigment64/blob/master/LICENSE)
@@ -6,6 +7,7 @@
 pigment64 is a library written in Rust for converting N64 image data between native and png formats.
 
 ## Supported formats
+
 pigment64 supports a variety of common N64 image formats:
 
 - Intensity: I1, I4, I8
@@ -29,6 +31,7 @@ Commands:
 ## Library usage
 
 To use pigment64 in your Rust project simply run a
+
 ```bash
 cargo add pigment64
 ```
@@ -49,13 +52,15 @@ This project uses `maturin` to build the Rust-based Python extension. It is reco
 
 #### Setup
 
-1.  Create and activate a virtual environment:
+1. Create and activate a virtual environment:
+
     ```bash
     python3 -m venv .venv
     source .venv/bin/activate
     ```
 
-2.  Install dependencies:
+2. Install dependencies:
+
     ```bash
     pip install maturin pytest
     ```
@@ -67,6 +72,7 @@ To compile the library and install it into your active virtual environment, run:
 ```bash
 maturin develop
 ```
+
 ## License
 
 This project is licensed under the MIT License.
