@@ -1,6 +1,6 @@
 [package]
 name = "pigment64"
-version = "0.6.2"
+version = "0.6.3"
 edition = "2024"
 description = "A library for handling conversion between N64 texture formats and modern image formats"
 repository = "https://github.com/decompals/pigment64"
@@ -8,6 +8,13 @@ license = "MIT"
 keywords = ["nintendo64", "texture", "conversion", "n64", "image"]
 categories = ["multimedia", "encoding", "game-development"]
 readme = "README.md"
+
+# Use https://github.com/foresterre/cargo-msrv to check the MSRV
+# ```
+# cargo install cargo-msrv --locked --force
+# cargo msrv find
+# ```
+rust-version = "1.85.0"
 
 [lib]
 name = "pigment64"
