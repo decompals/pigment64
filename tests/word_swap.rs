@@ -19,7 +19,7 @@ fn test_swap_logic(image_type: ImageType, asset_name: &str) {
     let (width, height) = (png.width(), png.height());
 
     // Convert PNG to binary
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_pigment64_cli"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_pigment64"));
     cmd.args([
         "to-bin",
         &input_png_path,
@@ -73,7 +73,7 @@ fn test_swap_logic(image_type: ImageType, asset_name: &str) {
     );
 
     // Test converting back (Round trip)
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_pigment64_cli"));
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_pigment64"));
     cmd.args([
         "to-png",
         &generated_swapped_bin_path,
