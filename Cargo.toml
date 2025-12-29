@@ -15,7 +15,7 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [[bin]]
-name = "pigment64_cli"
+name = "pigment64"
 path = "src/main.rs"
 
 [features]
